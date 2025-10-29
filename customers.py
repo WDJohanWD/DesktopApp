@@ -2,8 +2,9 @@ import re
 
 from PyQt6 import QtWidgets, QtCore
 
-import conexion
+from conexion import Conexion
 import globals
+from events import Events
 
 class Customers:
     @staticmethod
@@ -63,28 +64,35 @@ class Customers:
     @staticmethod
     def loadTablecli(varcli):
         try:
-            listTabCustomers = conexion.Conexion.listCustomers(varcli)
-            print(listTabCustomers)
+            listTabCustomers = Conexion.listCustomers(varcli)
             index = 0
             for record in listTabCustomers:
-                globals.ui.tableCustomerlist.setRowCount(index + 1)
-                globals.ui.tableCustomerlist.setItem(index, 0, QtWidgets.QTableWidgetItem(str(record[2])))
-                globals.ui.tableCustomerlist.setItem(index, 1, QtWidgets.QTableWidgetItem(str(record[3])))
-                globals.ui.tableCustomerlist.setItem(index, 2, QtWidgets.QTableWidgetItem(str(record[5])))
-                globals.ui.tableCustomerlist.setItem(index, 3, QtWidgets.QTableWidgetItem(str(record[7])))
-                globals.ui.tableCustomerlist.setItem(index, 4, QtWidgets.QTableWidgetItem(str(record[8])))
-                globals.ui.tableCustomerlist.setItem(index, 5, QtWidgets.QTableWidgetItem(str(record[9])))
-                globals.ui.tableCustomerlist.item(index, 0).setTextAlignment(
+                globals.ui.tblCustomerlist.setRowCount(index + 1)
+                globals.ui.tblCustomerlist.setItem(index, 0, QtWidgets.QTableWidgetItem(str(record[2])))
+                globals.ui.tblCustomerlist.setItem(index, 1, QtWidgets.QTableWidgetItem(str(record[3])))
+                globals.ui.tblCustomerlist.setItem(index, 2,
+                                                   QtWidgets.QTableWidgetItem(str("  " + str(record[5]) + "  ")))
+                globals.ui.tblCustomerlist.setItem(index, 3, QtWidgets.QTableWidgetItem(str(record[7])))
+                globals.ui.tblCustomerlist.setItem(index, 4, QtWidgets.QTableWidgetItem(str(record[8])))
+                globals.ui.tblCustomerlist.setItem(index, 5, QtWidgets.QTableWidgetItem(str(record[9])))
+                if str(record[10]) == "True":
+                    globals.ui.tblCustomerlist.setItem(index, 6, QtWidgets.QTableWidgetItem(str("Alta")))
+                else:
+                    globals.ui.tblCustomerlist.setItem(index, 6, QtWidgets.QTableWidgetItem(str("Baja")))
+
+                globals.ui.tblCustomerlist.item(index, 0).setTextAlignment(
                     QtCore.Qt.AlignmentFlag.AlignLeft.AlignVCenter)
-                globals.ui.tableCustomerlist.item(index, 1).setTextAlignment(
+                globals.ui.tblCustomerlist.item(index, 1).setTextAlignment(
                     QtCore.Qt.AlignmentFlag.AlignLeft.AlignVCenter)
-                globals.ui.tableCustomerlist.item(index, 2).setTextAlignment(
+                globals.ui.tblCustomerlist.item(index, 2).setTextAlignment(
                     QtCore.Qt.AlignmentFlag.AlignCenter.AlignCenter)
-                globals.ui.tableCustomerlist.item(index, 3).setTextAlignment(
+                globals.ui.tblCustomerlist.item(index, 3).setTextAlignment(
                     QtCore.Qt.AlignmentFlag.AlignCenter.AlignCenter)
-                globals.ui.tableCustomerlist.item(index, 4).setTextAlignment(
+                globals.ui.tblCustomerlist.item(index, 4).setTextAlignment(
                     QtCore.Qt.AlignmentFlag.AlignCenter.AlignCenter)
-                globals.ui.tableCustomerlist.item(index, 5).setTextAlignment(
+                globals.ui.tblCustomerlist.item(index, 5).setTextAlignment(
+                    QtCore.Qt.AlignmentFlag.AlignCenter.AlignCenter)
+                globals.ui.tblCustomerlist.item(index, 6).setTextAlignment(
                     QtCore.Qt.AlignmentFlag.AlignCenter.AlignCenter)
                 index += 1
         except Exception as error:
@@ -93,56 +101,59 @@ class Customers:
     @staticmethod
     def selectCustomer(self):
         try:
-            row = globals.ui.tableCustomerlist.selectedItems()
-            data = [dato.text() for dato in row]
-            record = conexion.Conexion.dataOneCustomer(data[2])
-            boxes = [globals.ui.txtDnicli, globals.ui.txtAltacli, globals.ui.txtApelcli, globals.ui.txtNomecli ,globals.ui.txtEmailcli, globals.ui.txtMobilcli, globals.ui.txtDircli]
-            print(data)
-            for i in range (len(boxes)):
+            row = globals.ui.tblCustomerlist.selectedItems()
+            data = [data.text() for data in row]
+            record = Conexion.dataOneCustomer(str(data[2]))
+            print(record)
+            boxes = [globals.ui.txtDnicli, globals.ui.txtAltacli, globals.ui.txtApelcli, globals.ui.txtNomecli,
+                     globals.ui.txtEmailcli, globals.ui.txtMobilcli, globals.ui.txtDircli]
+            for i in range(len(boxes)):
                 boxes[i].setText(str(record[i]))
-
             globals.ui.cmbProvcli.setCurrentText(str(record[7]))
             globals.ui.cmbMunicli.setCurrentText(str(record[8]))
-
-            if str(record[9]) == 'paper':
+            if str(record[9]) == "paper":
                 globals.ui.rbtFacpaper.setChecked(True)
             else:
-                globals.ui.rbtFacemail.setChecked(False)
+                globals.ui.rbtFacmail.setChecked(True)
 
-            globals.ui.txtDnicli.setEnabled(True)
+            if str(record[10]) == "True":
+                globals.estado = str("True")
+            else:
+                globals.estado = str("False")
+
+            globals.ui.txtDnicli.setEnabled(False)
             globals.ui.txtDnicli.setStyleSheet("background-color: rgb(255, 255, 197);")
+
+
         except Exception as error:
             print("error en selectCustomer ", error)
 
     @staticmethod
-    def delCliente():
+    def delCliente(self):
         try:
             mbox = QtWidgets.QMessageBox()
             mbox.setWindowTitle("Warning")
             mbox.setIcon(QtWidgets.QMessageBox.Icon.Warning)
             mbox.setText("Delete Client?")
-            mbox.setStandardButtons(QtWidgets.QMessageBox.StandardButton.Yes | QtWidgets.QMessageBox.StandardButton.No)
-            mbox.setDefaultButton(QtWidgets.QMessageBox.StandardButton.No)
+            mbox.setStandardButtons(QtWidgets.QMessageBox.StandardButton.Yes | QtWidgets.QMessageBox.StandardButton.No )
             if mbox.exec():
                 dni = globals.ui.txtDnicli.text()
-                if conexion.Conexion.deleteCli(dni):
+                if Conexion.deleteCli(dni):
                     mbox = QtWidgets.QMessageBox()
                     mbox.setWindowTitle("Information")
                     mbox.setIcon(QtWidgets.QMessageBox.Icon.Information)
-                    mbox.setText("Delete Client")
-                else:
-                    mbox = QtWidgets.QMessageBox()
-                    mbox.setWindowTitle("Information")
-                    mbox.setIcon(QtWidgets.QMessageBox.Icon.Information)
-                    mbox.setText("Something went wrong, contact with administrator")
-                Customers.loadTablecli()
+                    mbox.setText("The client has been deleted")
+                    mbox.setStandardButtons(QtWidgets.QMessageBox.StandardButton.Ok)
+                varcli = True
+                Customers.loadTablecli(varcli)
             else:
                 mbox = QtWidgets.QMessageBox()
                 mbox.setWindowTitle("Warning")
                 mbox.setIcon(QtWidgets.QMessageBox.Icon.Warning)
-                mbox.setText("Error. Contact with the administrator or try again later.")
+                mbox.setText("Contact with the administrator")
+                mbox.setStandardButtons(QtWidgets.QMessageBox.StandardButton.Ok)
         except Exception as error:
-            print("error delete cliente ", error)
+            print("error del cliente ", error)
 
     @staticmethod
     def Historicocli(self):
@@ -157,39 +168,140 @@ class Customers:
 
     @staticmethod
     def saveCli(self):
-            try:
-                newcli = [globals.ui.txtDnicli.text(), globals.ui.txtDnicli.text(), globals.ui.txtApelcli.text(),
-                          globals.ui.txtNamecli.text(), globals.ui.txtEmailcli.text(), globals.ui.txtMobilecli.text(),
-                          globals.ui.txtDircli.text, globals.ui.cmbProvcli.currentText(), globals.ui.cmbMunicli.currentText()]
+        try:
+            newCli = [globals.ui.txtDnicli.text(), globals.ui.txtAltacli.text(), globals.ui.txtNomecli.text(),
+                      globals.ui.txtEmailcli.text(), globals.ui.txtMobilcli.text(), globals.ui.txtDircli.text(),
+                      globals.ui.cmbProvcli.currentText(), globals.ui.cmbMunicli.currentText()]
+            if globals.ui.rbtFacpaper.isChecked():
+                fact = "paper"
+            elif globals.ui.rbtFacmail.isChecked():
+                fact = "electronic"
+            newCli.append(fact)
+            if Conexion.addCli(newCli) and len(newCli) > 0:
+                mbox = QtWidgets.QMessageBox()
+                mbox.setWindowTitle("Information")
+                mbox.setIcon(QtWidgets.QMessageBox.Icon.Information)
+                mbox.setText("The client has been added")
+                mbox.setStandardButtons(QtWidgets.QMessageBox.StandardButton.Ok)
+                varcli = True
+                Customers.loadTablecli(varcli)
+                Customers.resetCustomer()
+            else:
+                mbox = QtWidgets.QMessageBox()
+                mbox.setWindowTitle("Warning")
+                mbox.setIcon(QtWidgets.QMessageBox.Icon.Warning)
+                mbox.setText("Contact with the administrator")
+                mbox.setStandardButtons(QtWidgets.QMessageBox.StandardButton.Ok)
+            print(newCli)
+        except Exception as error:
+            print("error del save cliente ", error)
 
-                if globals.ui.rbtFacpaper.isChecked():
-                    fact = "paper"
-                elif globals.ui.rbtFacmail.isChecked():
-                    fact = "electronic"
+    def resetCustomer(self):
+        try:
+            globals.ui.txtDnicli.setText("")
+            globals.ui.txtDnicli.setStyleSheet('background-color: none;')
+            globals.ui.txtDnicli.setEnabled(True)
+            globals.ui.txtAltacli.setText("")
+            globals.ui.txtNomecli.setText("")
+            globals.ui.txtApelcli.setText("")
+            globals.ui.txtEmailcli.setText("")
+            globals.ui.txtEmailcli.setStyleSheet('background-color: none;')
+            globals.ui.txtMobilcli.setText("")
+            globals.ui.txtMobilcli.setStyleSheet('background-color: none;')
+            globals.ui.txtDircli.setText("")
+            Events.loadProv(self)
+            globals.ui.cmbMunicli.clear()
+            globals.ui.rbtFacmail.setChecked(True)
+            globals.ui.lblWarning.setText("")
+            globals.ui.lblWarning.setStyleSheet("background-color: none")
 
-                newcli.append(fact)
-                if conexion.Conexion.addCli(newcli):
-                    mbox = QtWidgets.QMessageBox()
-                    mbox.setWindowTitle("Information")
-                    mbox.setIcon(QtWidgets.QMessageBox.Icon.Information)
-                    mbox.setText("Client added")
-                    varcli = True
-                    Customers.loadTablecli(varcli)
+
+        except Exception as error:
+            print("error emptyCustomers ", error)
+
+    def modifCli(self):
+        try:
+            print(globals.estado)
+            if globals.estado == str("False"):
+                mbox = QtWidgets.QMessageBox()
+                mbox.setWindowTitle("Question")
+                mbox.setIcon(QtWidgets.QMessageBox.Icon.Question)
+                mbox.setText("Cliente not activated. Doy tou want it activated?")
+                mbox.setStandardButtons(
+                    QtWidgets.QMessageBox.StandardButton.Yes | QtWidgets.QMessageBox.StandardButton.No)
+                if mbox.exec():
+                    globals.estado = str("True")
+
+            if globals.ui.textDnicli.text() != "":
+                dni = globals.ui.txtDnicli.text()
+                mbox = QtWidgets.QMessageBox()
+                mbox.setWindowTitle("Question")
+                mbox.setIcon(QtWidgets.QMessageBox.Icon.Question)
+                mbox.setText("Are you sure you want to modify this client?")
+                mbox.setStandardButtons(
+                    QtWidgets.QMessageBox.StandardButton.Yes | QtWidgets.QMessageBox.StandardButton.No)
+                if mbox.exec():
+                    dni = globals.ui.txtDnicli.text()
+                    modifCli = [globals.ui.txtAltacli.text(), globals.ui.txtApelcli.text(),
+                                globals.ui.txtNomecli.text(),
+                                globals.ui.txtEmailcli.text(), globals.ui.txtMobilcli.text(),
+                                globals.ui.txtDircli.text(),
+                                globals.ui.cmbProvcli.currentText(), globals.ui.cmbMunicli.currentText()]
+                    if globals.ui.rbtFacpaper.isChecked():
+                        fact = "paper"
+                    elif globals.ui.rbtFacmail.isChecked():
+                        fact = "electronic"
+                    modifCli.append(fact)
+                    print(modifCli)
+                    if Conexion.modifCli(dni, modifCli):
+                        mbox = QtWidgets.QMessageBox()
+                        mbox.setWindowTitle("Information")
+                        mbox.setIcon(QtWidgets.QMessageBox.Icon.Information)
+                        mbox.setText("The client has been modified")
+                        mbox.setStandardButtons(QtWidgets.QMessageBox.StandardButton.Ok)
+                        if mbox.exec():
+                            mbox.hide
+                    else:
+                        mbox = QtWidgets.QMessageBox()
+                        mbox.setWindowTitle("Warning")
+                        mbox.setIcon(QtWidgets.QMessageBox.Icon.Warning)
+                        mbox.setText("Error modifying the client.")
+                        mbox.setStandardButtons(QtWidgets.QMessageBox.StandardButton.Ok)
+                        if mbox.exec():
+                            mbox.hide
+
+            Customers.loadTablecli(True)
+        except Exception as error:
+            print("error en modifCli ", error)
+
+    @staticmethod
+    def buscaCli(self):
+        try:
+            record = []
+            dni = globals.ui.txtDnicli.text()
+            record = Conexion.dataOneCustomer(dni)
+            if not record:
+                mbox = QtWidgets.QMessageBox()
+                mbox.setWindowTitle("Information")
+                mbox.setIcon(QtWidgets.QMessageBox.Icon.Information)
+                mbox.setText("Client does not exist")
+                mbox.setStandardButtons(QtWidgets.QMessageBox.StandardButton.Ok)
+                if mbox.exec():
+                    mbox.hide
+            else:
+                box = [globals.ui.txtDnicli, globals.ui.txtAltacli, globals.ui.txtApelcli, globals.ui.txtNomecli,
+                       globals.ui.txtEmailcli, globals.ui.txtMobilcli, globals.ui.txtDircli]
+                for i in range(len(box)):
+                    box[i].setText(str(record[i]))
+                globals.ui.cmbProvcli.setCurrentText(str(record[7]))
+                globals.ui.cmbMunicli.setCurrentText(str(record[8]))
+                if str(record[9]) == "paper":
+                    globals.ui.rbtFacpaper.setChecked(True)
                 else:
-                    mbox = QtWidgets.QMessageBox()
-                    mbox.setWindowTitle("Warning")
-                    mbox.setIcon(QtWidgets.QMessageBox.Icon.Warning)
-                    mbox.setText("Client not added")
-            except Exception as e:
-                print("Error data", e)
+                    globals.ui.rbtFacmail.setChecked(True)
+                if str(record[10]) == "False":
+                    globals.ui.lblWarning.setText("Historical Client")
+                    globals.ui.lblWarning.setStyleSheet("background-color: rgb(255, 255, 200); color: red;")
 
-    # @staticmethod
-    # def buscaCli():
-    #     try:
-    #         for i in range(len(box)):
-    #             box[i].setText(record([i]))
-    #         globals.ui.cmbProvcli.setCurrentText(str(record[7]))
-    #         globals.ui.cmbMunicli.setCurrentText(str(record[8]))
-    #         if str(record[])
-    #     except Exception as error:
-    #         print("error buscaCli ", error)
+        except Exception as error:
+            print("error buscaCli ", error)

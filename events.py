@@ -1,7 +1,14 @@
+import csv
+import os
+import shutil
 import sys
 import time
+import zipfile
+from datetime import datetime
+
 
 import conexion
+import customers
 import globals
 
 from PyQt6 import  QtCore, QtGui, QtWidgets
@@ -59,3 +66,114 @@ class Events:
             print("Error en cargar Municipios", e)
 
 
+    def messageAbout(self):
+        try:
+            globals.about.show()
+        except Exception as e:
+            print("Error en about", e)
+
+    def closeAbout(self):
+        try:
+            globals.about.hide()
+        except Exception as e:
+            print("Error en about", e)
+
+    def resizeTabCustomer(self):
+        try:
+            header = globals.ui.tblCustomerlist.horizontalHeader()
+            for i in range(header.count()):
+                if i == 6:
+                    header.setSelectionResizeMode(i, QtWidgets.QHeaderView.ResizeMode.ResizeToContents)
+                else:
+                    header.setSectionResizeMode(i, QtWidgets.QHeaderView.ResizeMode.Stretch)
+                header_items = globals.ui.tblCustomerlist.horizontalHeaderItem(i)
+                # negrita cabecera
+                font = header_items.font()
+                font.setBold(True)
+                header_items.setFont(font)
+        except Exception as e:
+            print("error en resize tabla clients: ", e)
+
+
+    def saveBackup(self):
+        try:
+            data = datetime.now().strftime("%Y_%m_%d_%H_%M_%S")
+            fileName = str(data)+'_backup.zip'
+            directory, file = globals.dlgopen.getSaveFileName(None, 'Save Backup file', fileName, 'zip')
+            if globals.dlgopen.accept and file:
+                fileZip = zipfile.ZipFile(file, "w")
+                fileZip.write('./data/bbdd.sqlite', os.path.basename('bbdd.sqlite'), zipfile.ZIP_DEFLATED)
+                fileZip.close()
+                shutil.move(file, directory)
+                mbox = QtWidgets.QMessageBox()
+                mbox.setIcon(QtWidgets.QMessageBox.Icon.Information)
+                mbox.setWindowIcon(QtGui.QIcon('./img/logo.png'))
+                mbox.setWindowTitle('Save Backup')
+                mbox.setText('Save Backup Done')
+                mbox.setStandardButtons(QtWidgets.QMessageBox.StandardButton.Ok)
+                mbox.exec()
+
+            print("HOLA")
+        except Exception as e:
+            print("Error en save backup", e)
+
+    def restoreBackup(self):
+        try:
+            fileName = globals.dlgopen.getOpenFileName(None, 'Restore Backup file', '', '*.zip;;All Files (*)')
+            file = fileName[0]
+            if file:
+                with zipfile.ZipFile(file, "r") as bbdd:
+                    bbdd.extractall(path='./data', pwd=None)
+                    bbdd.close()
+                mbox = QtWidgets.QMessageBox()
+                mbox.setIcon(QtWidgets.QMessageBox.Icon.Information)
+                mbox.setWindowIcon(QtGui.QIcon('./img/logo.png'))
+                mbox.setWindowTitle('Restore Backup')
+                mbox.setText('Restore Backup Done')
+                mbox.setStandardButtons(QtWidgets.QMessageBox.StandardButton.Ok)
+                mbox.exec()
+                conexion.Conexion.db_conexion(self)
+                Events.loadProv(self)
+                customers.Customers.loadTablecli(True)
+
+        except Exception as e:
+            print("Error en restore backup", e)
+
+
+    def exportXlsCustomers(self):
+        try:
+            data = datetime.now().strftime("%Y_%m_%d_%H_%M_%S")
+            fileName = str(data)+'_customers.csv'
+            directory, file = globals.dlgopen.getSaveFileName(None, 'Save Customers file', fileName, 'csv')
+            var = True
+            if file:
+                records = conexion.Conexion.listCustomers(var)
+                with open(file, "w", newline= '', encoding= 'utf-8') as csvfile:
+                    writer = csv.writer(csvfile)
+                    writer.writerow(["DNI_NIE", "Fecha alta", "surname", "Name", "Mail", "Mobile", "Address", "Province", "City", "Invoice Type", "Active"])
+
+                    for record in records:
+                        writer.writerow(record)
+
+                shutil.move(file, directory)
+                mbox = QtWidgets.QMessageBox()
+                mbox.setIcon(QtWidgets.QMessageBox.Icon.Information)
+                mbox.setWindowIcon(QtGui.QIcon('./img/logo.png'))
+                mbox.setWindowTitle('Export Customers')
+                mbox.setText('The customer data has been exported')
+                mbox.setStandardButtons(QtWidgets.QMessageBox.StandardButton.Ok)
+                mbox.exec()
+
+            else:
+                mbox = QtWidgets.QMessageBox()
+                mbox.setIcon(QtWidgets.QMessageBox.Icon.Warning)
+                mbox.setWindowIcon(QtGui.QIcon('./img/logo.png'))
+                mbox.setWindowTitle('Error exporting')
+                mbox.setText('There was an error exporting the customer data')
+                mbox.setStandardButtons(QtWidgets.QMessageBox.StandardButton.Ok)
+                mbox.exec()
+
+
+
+        except Exception as e:
+            print("Error en export customers", e)
