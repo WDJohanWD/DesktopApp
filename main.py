@@ -41,7 +41,7 @@ class Main(QtWidgets.QMainWindow):
         globals.ui.actionCustomers.triggered.connect(Events.exportXlsCustomers)
 
         # Functions of Historical Checkbox
-        globals.ui.chkHistoricocli.stateChanged.connect(Customers.HistoricoCli)
+        globals.ui.chkHistoricocli.stateChanged.connect(Customers.Historicocli)
 
         # Load combobox
         Events.loadProv(self)

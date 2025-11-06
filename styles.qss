@@ -1,4 +1,28 @@
-@PushButton {
-    background-color: #45626;
-    color: white
+QPushButton{
+    background-color: #458284;
+    color: white;
+    border: 0;
+    border-radius: 0px;
+}
+
+QPushButton#btnBuscaCli{
+    background-coloR: #ffffff;
+}
+
+QPushButton#btnDelcli{
+    background-color: #ff0000;
+}
+
+QHeaderView{
+    background-color: #006eff;
+}
+
+QStatusBar{
+    background-color: #006eff;
+    color: white;
+}
+
+QMenuBar{
+    background-color: #006eff;
+    color: white;
 }
