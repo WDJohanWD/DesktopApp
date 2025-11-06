@@ -7,7 +7,7 @@ import events
 from styles import load_stylesheet
 from window import *
 from venAux import Calendar, About, FileDialogOpen
-
+from reports import *
 import styles
 import sys
 
@@ -39,6 +39,8 @@ class Main(QtWidgets.QMainWindow):
         globals.ui.actionBackup.triggered.connect(Events.saveBackup)
         globals.ui.actionRestoreBackup.triggered.connect(Events.restoreBackup)
         globals.ui.actionCustomers.triggered.connect(Events.exportXlsCustomers)
+        globals.ui.actionCustomers_Reports.triggered.connect(Reports.reportCustomers)
+
 
         # Functions of Historical Checkbox
         globals.ui.chkHistoricocli.stateChanged.connect(Customers.Historicocli)

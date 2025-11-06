@@ -90,7 +90,7 @@
         </property>
         <property name="icon">
          <iconset>
-          <normaloff>../../../.designer/img/rotate-ccw.png</normaloff>../../../.designer/img/rotate-ccw.png</iconset>
+          <normaloff>../../../../.designer/img/rotate-ccw.png</normaloff>../../../../.designer/img/rotate-ccw.png</iconset>
         </property>
         <property name="iconSize">
          <size>
@@ -321,7 +321,7 @@
         </property>
         <property name="icon">
          <iconset>
-          <normaloff>../../../.designer/img/calendar-days.png</normaloff>../../../.designer/img/calendar-days.png</iconset>
+          <normaloff>../../../../.designer/img/calendar-days.png</normaloff>../../../../.designer/img/calendar-days.png</iconset>
         </property>
         <property name="iconSize">
          <size>
@@ -649,7 +649,7 @@
         </property>
         <property name="icon">
          <iconset>
-          <normaloff>../../../.designer/img/user-search.png</normaloff>../../../.designer/img/user-search.png</iconset>
+          <normaloff>../../../../.designer/img/user-search.png</normaloff>../../../../.designer/img/user-search.png</iconset>
         </property>
         <property name="iconSize">
          <size>
@@ -834,6 +834,7 @@
     <property name="title">
      <string>Reports</string>
     </property>
+    <addaction name="actionCustomers_Reports"/>
    </widget>
    <widget class="QMenu" name="menuAbout">
     <property name="title">
@@ -865,7 +866,7 @@
   <action name="actionExit">
    <property name="icon">
     <iconset>
-     <normaloff>../img/exit-icon.png</normaloff>../img/exit-icon.png</iconset>
+     <normaloff>../../../.designer/img/exit-icon.png</normaloff>../../../.designer/img/exit-icon.png</iconset>
    </property>
    <property name="text">
     <string>Exit</string>
@@ -884,7 +885,7 @@
   <action name="actionBackup">
    <property name="icon">
     <iconset>
-     <normaloff>../img/backup.png</normaloff>../img/backup.png</iconset>
+     <normaloff>../../../.designer/img/backup.png</normaloff>../../../.designer/img/backup.png</iconset>
    </property>
    <property name="text">
     <string>Backup</string>
@@ -896,13 +897,18 @@
   <action name="actionRestoreBackup">
    <property name="icon">
     <iconset>
-     <normaloff>../img/restore.png</normaloff>../img/restore.png</iconset>
+     <normaloff>../../../.designer/img/restore.png</normaloff>../../../.designer/img/restore.png</iconset>
    </property>
    <property name="text">
     <string>Restore Backup</string>
    </property>
   </action>
   <action name="actionCustomers">
+   <property name="text">
+    <string>Customers</string>
+   </property>
+  </action>
+  <action name="actionCustomers_Reports">
    <property name="text">
     <string>Customers</string>
    </property>
