@@ -1,10 +1,12 @@
 import re
 
+
 from PyQt6 import QtWidgets, QtCore
 
-from conexion import Conexion
 import globals
+from conexion import Conexion
 from events import Events
+
 
 class Customers:
     @staticmethod
@@ -61,7 +63,6 @@ class Customers:
             globals.ui.txtMobilcli.setPlaceholderText("Invalid Mobile")
             globals.ui.txtMobilcli.setFocus()
 
-    @staticmethod
     def loadTablecli(varcli):
         try:
             listTabCustomers = Conexion.listCustomers(varcli)
@@ -70,8 +71,7 @@ class Customers:
                 globals.ui.tblCustomerlist.setRowCount(index + 1)
                 globals.ui.tblCustomerlist.setItem(index, 0, QtWidgets.QTableWidgetItem(str(record[2])))
                 globals.ui.tblCustomerlist.setItem(index, 1, QtWidgets.QTableWidgetItem(str(record[3])))
-                globals.ui.tblCustomerlist.setItem(index, 2,
-                                                   QtWidgets.QTableWidgetItem(str("  " + str(record[5]) + "  ")))
+                globals.ui.tblCustomerlist.setItem(index, 2, QtWidgets.QTableWidgetItem(str("  " + str(record[5]) + "  ")))
                 globals.ui.tblCustomerlist.setItem(index, 3, QtWidgets.QTableWidgetItem(str(record[7])))
                 globals.ui.tblCustomerlist.setItem(index, 4, QtWidgets.QTableWidgetItem(str(record[8])))
                 globals.ui.tblCustomerlist.setItem(index, 5, QtWidgets.QTableWidgetItem(str(record[9])))
@@ -98,13 +98,11 @@ class Customers:
         except Exception as error:
             print("error en loadTablecli ", error)
 
-    @staticmethod
     def selectCustomer(self):
         try:
             row = globals.ui.tblCustomerlist.selectedItems()
             data = [data.text() for data in row]
             record = Conexion.dataOneCustomer(str(data[2]))
-            print(record)
             boxes = [globals.ui.txtDnicli, globals.ui.txtAltacli, globals.ui.txtApelcli, globals.ui.txtNomecli,
                      globals.ui.txtEmailcli, globals.ui.txtMobilcli, globals.ui.txtDircli]
             for i in range(len(boxes)):
@@ -127,6 +125,7 @@ class Customers:
 
         except Exception as error:
             print("error en selectCustomer ", error)
+
 
     @staticmethod
     def delCliente(self):
@@ -155,18 +154,16 @@ class Customers:
         except Exception as error:
             print("error del cliente ", error)
 
-    @staticmethod
-    def Historicocli(self):
+    def HistoricoCli(self):
         try:
             if globals.ui.chkHistoricocli.isChecked():
-                varcli = False
+                varcli = False;
             else:
-                varcli = True
+                varcli = True;
             Customers.loadTablecli(varcli)
         except Exception as error:
-            print("error en historicocli ", error)
+            print("error del historico cliente ", error)
 
-    @staticmethod
     def saveCli(self):
         try:
             newCli = [globals.ui.txtDnicli.text(), globals.ui.txtAltacli.text(), globals.ui.txtNomecli.text(),
@@ -192,7 +189,6 @@ class Customers:
                 mbox.setIcon(QtWidgets.QMessageBox.Icon.Warning)
                 mbox.setText("Contact with the administrator")
                 mbox.setStandardButtons(QtWidgets.QMessageBox.StandardButton.Ok)
-            print(newCli)
         except Exception as error:
             print("error del save cliente ", error)
 
@@ -227,8 +223,7 @@ class Customers:
                 mbox.setWindowTitle("Question")
                 mbox.setIcon(QtWidgets.QMessageBox.Icon.Question)
                 mbox.setText("Cliente not activated. Doy tou want it activated?")
-                mbox.setStandardButtons(
-                    QtWidgets.QMessageBox.StandardButton.Yes | QtWidgets.QMessageBox.StandardButton.No)
+                mbox.setStandardButtons(QtWidgets.QMessageBox.StandardButton.Yes | QtWidgets.QMessageBox.StandardButton.No)
                 if mbox.exec():
                     globals.estado = str("True")
 
@@ -238,14 +233,11 @@ class Customers:
                 mbox.setWindowTitle("Question")
                 mbox.setIcon(QtWidgets.QMessageBox.Icon.Question)
                 mbox.setText("Are you sure you want to modify this client?")
-                mbox.setStandardButtons(
-                    QtWidgets.QMessageBox.StandardButton.Yes | QtWidgets.QMessageBox.StandardButton.No)
+                mbox.setStandardButtons(QtWidgets.QMessageBox.StandardButton.Yes | QtWidgets.QMessageBox.StandardButton.No)
                 if mbox.exec():
                     dni = globals.ui.txtDnicli.text()
-                    modifCli = [globals.ui.txtAltacli.text(), globals.ui.txtApelcli.text(),
-                                globals.ui.txtNomecli.text(),
-                                globals.ui.txtEmailcli.text(), globals.ui.txtMobilcli.text(),
-                                globals.ui.txtDircli.text(),
+                    modifCli = [globals.ui.txtAltacli.text(), globals.ui.txtApelcli.text(), globals.ui.txtNomecli.text(),
+                                globals.ui.txtEmailcli.text(), globals.ui.txtMobilcli.text(), globals.ui.txtDircli.text(),
                                 globals.ui.cmbProvcli.currentText(), globals.ui.cmbMunicli.currentText()]
                     if globals.ui.rbtFacpaper.isChecked():
                         fact = "paper"
@@ -273,6 +265,7 @@ class Customers:
             Customers.loadTablecli(True)
         except Exception as error:
             print("error en modifCli ", error)
+
 
     @staticmethod
     def buscaCli(self):

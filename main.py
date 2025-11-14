@@ -1,13 +1,10 @@
-
-
-
-
 from customers import *
 import events
 from styles import load_stylesheet
 from window import *
 from venAux import Calendar, About, FileDialogOpen
-from reports import *
+from reports import Reports
+
 import styles
 import sys
 
@@ -18,12 +15,14 @@ class Main(QtWidgets.QMainWindow):
         globals.ui = Ui_MainWindow()
         globals.ui.setupUi(self)
 
+
         globals.vencal = Calendar()
         globals.about = About()
         globals.dlgopen = FileDialogOpen()
 
         # Cargar estilos
         Events.resizeTabCustomer(self)
+        Events.loadStatusBar(self)
         self.setStyleSheet(load_stylesheet())
 
         # Conexion
@@ -39,11 +38,10 @@ class Main(QtWidgets.QMainWindow):
         globals.ui.actionBackup.triggered.connect(Events.saveBackup)
         globals.ui.actionRestoreBackup.triggered.connect(Events.restoreBackup)
         globals.ui.actionCustomers.triggered.connect(Events.exportXlsCustomers)
-        globals.ui.actionCustomers_Reports.triggered.connect(Reports.reportCustomers)
-
+        globals.ui.actionCustomers_Reports.triggered.connect(Reports.runCustomerReports)
 
         # Functions of Historical Checkbox
-        globals.ui.chkHistoricocli.stateChanged.connect(Customers.Historicocli)
+        globals.ui.chkHistoricocli.stateChanged.connect(Customers.HistoricoCli)
 
         # Load combobox
         Events.loadProv(self)
