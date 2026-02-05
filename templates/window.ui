@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>1184</width>
-    <height>973</height>
+    <height>987</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -680,7 +680,7 @@
           <x>9</x>
           <y>265</y>
           <width>1081</width>
-          <height>564</height>
+          <height>566</height>
          </rect>
         </property>
         <layout class="QFormLayout" name="formLayout">
@@ -806,7 +806,7 @@
      <x>0</x>
      <y>0</y>
      <width>1184</width>
-     <height>21</height>
+     <height>26</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuFile">
@@ -834,6 +834,7 @@
     <property name="title">
      <string>Reports</string>
     </property>
+    <addaction name="actionCustomers_Reports"/>
    </widget>
    <widget class="QMenu" name="menuAbout">
     <property name="title">
@@ -903,6 +904,11 @@
    </property>
   </action>
   <action name="actionCustomers">
+   <property name="text">
+    <string>Customers</string>
+   </property>
+  </action>
+  <action name="actionCustomers_Reports">
    <property name="text">
     <string>Customers</string>
    </property>
