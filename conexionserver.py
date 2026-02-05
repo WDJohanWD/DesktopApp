@@ -98,7 +98,6 @@ class ConexionServer():
             print(f"Error al insertar el cliente: {e}")
 
     def datosOneCliente(dni):
-        print(dni)
         registro = []  # Inicializa la lista para almacenar los datos del cliente
         try:
             conexion = ConexionServer().crear_conexion()
@@ -110,7 +109,6 @@ class ConexionServer():
                 # Recuperar los datos de la consulta
                 for row in cursor.fetchall():
                     registro.extend([str(col) for col in row])
-            print(registro)
             return registro
 
         except Exception as e:

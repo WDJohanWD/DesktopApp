@@ -65,7 +65,6 @@ class Events:
         except Exception as e:
             print("Error en cargar Municipios", e)
 
-
     def messageAbout(self):
         try:
             globals.about.show()
@@ -177,3 +176,20 @@ class Events:
 
         except Exception as e:
             print("Error en export customers", e)
+
+    def loadStatusBar(self):
+        try:
+            data = datetime.now().strftime('%d/%m/%y')
+            self.labelstatus = QtWidgets.QLabel(self)
+            self.labelstatus.setAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
+            self.labelstatus.setText(f'Date: {data}')
+            self.labelstatus.setStyleSheet('color: white')
+            globals.ui.statusbar.addWidget(self.labelstatus)
+            self.labelversion = QtWidgets.QLabel(self)
+            self.labelversion.setAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
+            self.labelversion.setText('Version 0.0.1')
+            self.labelversion.setStyleSheet('color: white')
+            globals.ui.statusbar.addWidget(self.labelversion)
+
+        except Exception as e:
+            print("Error en status bar", e)

@@ -1,7 +1,8 @@
 import os
-from PyQt6 import QtSql, QtWidgets
+from PyQt6  import QtSql, QtWidgets
 
 import globals
+
 
 class Conexion:
     def db_conexion(self = None):
@@ -18,7 +19,7 @@ class Conexion:
             query = QtSql.QSqlQuery()
             query.exec("SELECT name FROM sqlite_master WHERE type='table';")
 
-            if not query.next():
+            if not query.next():  # Si no hay tablas
                 QtWidgets.QMessageBox.critical(None, 'Error', 'Base de datos vacía o no válida.',
                                                QtWidgets.QMessageBox.StandardButton.Cancel)
                 return False
@@ -31,10 +32,9 @@ class Conexion:
                                            QtWidgets.QMessageBox.StandardButton.Cancel)
             return False
 
-    def listProv(self=None):
-
-        listprov = []
-        query = QtSql.QSqlQuery()
+    def listProv(self):
+        listprov= []
+        query  = QtSql.QSqlQuery()
         query.prepare("SELECT * FROM provincias")
         if query.exec():
             while query.next():
@@ -43,25 +43,26 @@ class Conexion:
 
     @staticmethod
     def listMuniProv(province):
+
         try:
-            listmunicipios = []
+            listaMunicipios = []
             query = QtSql.QSqlQuery()
-            query.prepare("SELECT * FROM municipios where idprov = (select idprov from provincias "
-                          " where provincia = :province)")
+            query.prepare("SELECT * FROM municipios WHERE idprov = (SELECT idprov FROM provincias WHERE provincia = :province)")
             query.bindValue(":province", province)
             if query.exec():
                 while query.next():
-                    listmunicipios.append(query.value(1))
-            return listmunicipios
-        except Exception as error:
-            print("error lista muni", error)
+                    listaMunicipios.append(query.value(1))
 
-    @staticmethod
-    def listCustomers(var):
+            return  listaMunicipios
+        except Exception as e:
+            print("Error lista municipios", e)
+
+
+    def listCustomers(varcli):
         list = []
-        if var:
+        if varcli:
             query = QtSql.QSqlQuery()
-            query.prepare("SELECT * FROM customers where historical = :true order by surname")
+            query.prepare("SELECT * FROM customers WHERE historical = :true order by surname")
             query.bindValue(":true", str(True))
             if query.exec():
                 while query.next():
@@ -69,20 +70,19 @@ class Conexion:
                     list.append(row)
         else:
             query = QtSql.QSqlQuery()
-            query.prepare("SELECT * FROM customers order by surname")
-            if  query.exec():
+            query.prepare("SELECT * FROM customers ORDER BY surname")
+            if query.exec():
                 while query.next():
                     row = [query.value(i) for i in range(query.record().count())]
                     list.append(row)
         return list
 
-    @staticmethod
     def dataOneCustomer(dato):
         try:
             list = []
-            data = str(dato).strip() #quita espacios en blanco
+            data = str(dato).strip()
             query = QtSql.QSqlQuery()
-            query.prepare("SELECT * FROM customers where mobile = :data")
+            query.prepare("SELECT * FROM customers WHERE mobile = :data")
             query.bindValue(":data", str(data))
             if query.exec():
                 while query.next():
@@ -91,56 +91,55 @@ class Conexion:
 
             if len(list) == 0:
                 query = QtSql.QSqlQuery()
-                query.prepare("SELECT * FROM customers where dni_nie = :data")
-                query.bindValue(":dato", str(data))
+                query.prepare("SELECT * FROM customers WHERE dni_nie = :data")
+                query.bindValue(":data", str(dato))
                 if query.exec():
                     while query.next():
                         for i in range(query.record().count()):
                             list.append(str(query.value(i)))
-            print(list)
-            return list
-        except Exception as error:
-            print("error dataOneCustomer", error)
 
-    @staticmethod
+            return list
+        except Exception as e:
+            print("Error data", e)
+
     def deleteCli(dni):
         try:
             query = QtSql.QSqlQuery()
-            query.prepare("UPDATE customers set historical = :value WHERE dni_nie = :dni")
-            query.bindValue(":dni", str(dni))
+            query.prepare("UPDATE customers SET historical = :value WHERE dni = :dni")
+            query.bindValue(":dni", dni)
             query.bindValue(":value", str(False))
             if query.exec():
                 return True
             else:
                 return False
-        except Exception as error:
-            print("error deleteCli", error)
+        except Exception as e:
+            print("Error data", e)
 
     @staticmethod
-    def addCli(newcli):
+    def addCli(newCli):
         try:
             query = QtSql.QSqlQuery()
-            query.prepare("INSERT INTO customers ( dni_nie, adddata, surname, name, mail, mobile, address, province, "
-                          " city, invoicetype, historical ) VALUES (:dnicli, :adddata, :surname, :name, :mail, :mobile, :address, "
-                          " :province, :city, :invoicetype, :historical)")
-            query.bindValue(":dnicli", str(newcli[0]))
-            query.bindValue(":adddata", str(newcli[1]))
-            query.bindValue(":surname", str(newcli[2]))
-            query.bindValue(":name", str(newcli[3]))
-            query.bindValue(":mail", str(newcli[4]))
-            query.bindValue(":mobile", str(newcli[5]))
-            query.bindValue(":address", str(newcli[6]))
-            query.bindValue(":province", str(newcli[7]))
-            query.bindValue(":city", str(newcli[8]))
-            query.bindValue(":invoicetype", str(newcli[9]))
+            query.prepare("INSERT INTO customers (dni_nie, adddata, surname, name, mail, mobile, address, province, city, invoicetype, historical) VALUES "
+                          " ( :dni_cli, :adddata, :surname, :surname, :name, :mail, :mobile, :address, :province, :city, :invoicetype, :historical)")
+            query.bindValue(":dni_cli", str(newCli[0]))
+            query.bindValue(":adddata", str(newCli[1]))
+            query.bindValue(":surname", str(newCli[2]))
+            query.bindValue(":name", str(newCli[3]))
+            query.bindValue(":mail", str(newCli[4]))
+            query.bindValue(":mobile", str(newCli[5]))
+            query.bindValue(":address", str(newCli[6]))
+            query.bindValue(":province", str(newCli[7]))
+            query.bindValue(":city", str(newCli[8]))
+            query.bindValue(":invoicetype", str(newCli[9]))
             query.bindValue(":historical", str(True))
+            query.exec()
 
             if query.exec():
                 return True
             else:
                 return False
-        except Exception as error:
-            print("error addCli", error)
+        except Exception as e:
+            print("Error addCli", e)
 
     def modifCli(dni, modifCli):
         try:
@@ -157,7 +156,6 @@ class Conexion:
             query.bindValue(":city", str(modifCli[7]))
             query.bindValue(":historical", str(globals.estado))
             query.bindValue(":invoicetype", str(modifCli[8]))
-            print(query)
             if query.exec():
                 return True
             else:
