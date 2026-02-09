@@ -1,556 +1,682 @@
-from datetime import datetime
-
 from PyQt6 import QtWidgets, QtCore
 from PyQt6.QtGui import QIcon
+from PyQt6.QtWidgets import QPushButton
 
-from conexion import Conexion
 import globals
-from globals import linesales
+from conexion import Conexion
+from events import Events
 from reports import Reports
+from products import Products
 
-class Invoice:
+
+class Invoice():
+    reports = Reports()
+    products = Products()
 
     @staticmethod
-    def searchInvoice():
+    def buscaCli(dni):
         try:
-            dni = globals.ui.txtDniFac.text().upper().strip()
-
-            if dni == "" or Conexion.searchClient(dni):
-                if dni == "":
-                    dni = "00000000T"
-                    globals.ui.txtDniFac.setText(dni)
-
+            if Conexion.buscaCli(dni):
                 record = Conexion.dataOneCustomer(dni)
-
-                globals.ui.lblNamefac.setText(record[2] + " " + record[3])
-                globals.ui.lblTipofac.setText(record[9])
-                globals.ui.lblnumfac_3.setText(
-                    record[6] + "   " + record[8] + "   " + record[7]
-                )
-                globals.ui.lblnumfac_4.setText(str(record[5]))
-
+                globals.ui.lblNamefac.setText(record[2] + ' ' + record[3])
+                globals.ui.lblTypefac.setText(record[9])
+                globals.ui.lblDirfac.setText(record[6] + ", " + record[8] + ', ' + record[7])
+                globals.ui.lblMobilefac.setText(record[5])
                 if record[10] == "True":
                     globals.ui.lblStatusfac.setText("Activo")
                 else:
                     globals.ui.lblStatusfac.setText("Inactivo")
+                return True
             else:
-                globals.ui.txtDniFac.setText("")
-                mbox = QtWidgets.QMessageBox()
-                mbox.setIcon(QtWidgets.QMessageBox.Icon.Warning)
-                mbox.setWindowTitle("Warning")
-                mbox.setText("Client not exists")
-                mbox.setStandardButtons(QtWidgets.QMessageBox.StandardButton.Ok)
-                if mbox.exec() == QtWidgets.QMessageBox.StandardButton.Ok:
-                    mbox.hide()
-
+                print("No existe el Usuario")
+            return False
         except Exception as error:
-            print("error en searchInvoice", error)
+            print("No se pudo obtener la factura", error)
 
-    @staticmethod
-    def reloadInvoice():
+    def cleanFac(self):
         try:
-            formfact = [
-                globals.ui.lblNamefac,
-                globals.ui.lblnumfac_3,
-                globals.ui.lblStatusfac,
-                globals.ui.lblTipofac,
-                globals.ui.lblnumfac_4,
-                globals.ui.lblFechafac,
-                globals.ui.lblnumfac,
-                globals.ui.txtDniFac,
+            # --- LIMPIAR CAMPOS DE TEXTO Y LABELS ---
+            boxes = [
+                globals.ui.txtDnifac, globals.ui.lblNamefac, globals.ui.lblTypefac,
+                globals.ui.lblDirfac, globals.ui.lblMobilefac, globals.ui.lblStatusfac,
+                globals.ui.lblNumfac, globals.ui.lblFechafac, globals.ui.lblSubtotal,
+                globals.ui.lblTotal, globals.ui.lblIva
             ]
 
-            for dato in formfact:
-                dato.setText("")
+            for box in boxes:
+                box.setText("")
 
-            globals.ui.tabsales.setRowCount(0)
+            table = globals.ui.tblSales
+            table.setRowCount(0)
+            table.setRowCount(1)
 
-        except Exception as error:
-            print("error en reloadInvoice", error)
+            table.setEditTriggers(
+                QtWidgets.QAbstractItemView.EditTrigger.AllEditTriggers
+            )
 
-    @staticmethod
-    def saveInvoice():
+            for c in range(6):
+                table.setItem(0, c, QtWidgets.QTableWidgetItem(""))
+
+            for c in range(6):
+                item = table.item(0, c)
+                if not item:
+                    continue
+
+                if c in (1, 4):
+                    item.setFlags(
+                        QtCore.Qt.ItemFlag.ItemIsSelectable |
+                        QtCore.Qt.ItemFlag.ItemIsEnabled |
+                        QtCore.Qt.ItemFlag.ItemIsEditable
+                    )
+                else:
+                    item.setFlags(
+                        QtCore.Qt.ItemFlag.ItemIsSelectable |
+                        QtCore.Qt.ItemFlag.ItemIsEnabled
+                    )
+
+            globals.linesales.clear()
+            globals.subtotal = 0
+
+            globals.ui.btnSaveSale.setEnabled(True)
+            Invoice.showDeleteButton(0)
+
+        except Exception as e:
+            print("Error en cleanFac:", e)
+
+    def saveInvoice(self):
+        dni = globals.ui.txtDnifac.text().upper()
+        if dni == "":
+            dni = "00000000T"
+
         try:
-            dni = globals.ui.txtDniFac.text()
-            data = datetime.now().strftime("%d/%m/%Y")
-
-            if dni != "" and data != "":
-                if Conexion.insertInvoice(dni, data):
-                    Invoice.loadTableInvoice()
-
+            if Invoice.buscaCli(dni):
+                if Conexion.insertInvoice(dni):
                     mbox = QtWidgets.QMessageBox()
+                    mbox.setWindowTitle("Information")
                     mbox.setIcon(QtWidgets.QMessageBox.Icon.Information)
-                    mbox.setWindowTitle("Invoice")
-                    mbox.setText("Invoice created successfully")
+                    mbox.setText("The invoice has been saved")
+                    mbox.setStandardButtons(QtWidgets.QMessageBox.StandardButton.Ok)
                     if mbox.exec():
-                        mbox.hide()
-
-                    Invoice.activeSales()
+                        mbox.hide
+                else:
+                    mbox = QtWidgets.QMessageBox()
+                    mbox.setWindowTitle("Warning")
+                    mbox.setIcon(QtWidgets.QMessageBox.Icon.Warning)
+                    mbox.setText("Error saving the invoice.")
+                    mbox.setStandardButtons(QtWidgets.QMessageBox.StandardButton.Ok)
+                    if mbox.exec():
+                        mbox.hide
             else:
                 mbox = QtWidgets.QMessageBox()
-                mbox.setIcon(QtWidgets.QMessageBox.Icon.Warning)
                 mbox.setWindowTitle("Warning")
-                mbox.setText("Missing Fields or Data")
+                mbox.setIcon(QtWidgets.QMessageBox.Icon.Warning)
+                mbox.setText("The user is not registered")
                 mbox.setStandardButtons(QtWidgets.QMessageBox.StandardButton.Ok)
-                if mbox.exec() == QtWidgets.QMessageBox.StandardButton.Ok:
-                    mbox.hide()
+                if mbox.exec():
+                    mbox.hide
 
-        except Exception as error:
-            print("error en saveInvoice", error)
+            Invoice.loadInvoices(self)
+        #    Invoice.activeSales()
 
-    @staticmethod
-    def loadTableInvoice(self=None):
+        except Exception as e:
+            print("Error en guardar factura", e)
+
+
+    def saveWithReturn(self):
+        dni = globals.ui.txtDnifac.text().upper()
+        if dni == "":
+            dni = "00000000T"
+        try:
+            if Invoice.buscaCli(dni):
+                id = Conexion.invoiceWithReturn(dni)
+                return id
+
+        except Exception as e:
+            print("Error en guardar factura", e)
+
+    def loadInvoices(self):
         try:
             records = Conexion.allInvoices(self)
             index = 0
 
-            header = globals.ui.tablefacv.horizontalHeader()
-            header.setSectionResizeMode(3, QtWidgets.QHeaderView.ResizeMode.Fixed)
-            globals.ui.tablefacv.setColumnWidth(3, 36)
-            globals.ui.tablefacv.setColumnWidth(0, 55)
-
             for record in records:
-                globals.ui.tablefacv.setColumnWidth(3, 34)
-                globals.ui.tablefacv.setRowCount(index + 1)
-                globals.ui.tablefacv.setItem(index, 0, QtWidgets.QTableWidgetItem(record[0]))
-                globals.ui.tablefacv.setItem(index, 1, QtWidgets.QTableWidgetItem(record[1]))
-                globals.ui.tablefacv.setItem(index, 2, QtWidgets.QTableWidgetItem(record[2]))
+                globals.ui.tblFaclist.setRowCount(index + 1)
+                globals.ui.tblFaclist.setItem(index, 0, QtWidgets.QTableWidgetItem(str(record[0])))
+                globals.ui.tblFaclist.setItem(index, 1, QtWidgets.QTableWidgetItem(str(record[1])))
+                globals.ui.tblFaclist.setItem(index, 2, QtWidgets.QTableWidgetItem(str(record[2])))
+
+                for col, value in enumerate(record[:3]):
+                    item = QtWidgets.QTableWidgetItem(str(value))
+                    item.setTextAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
+                    globals.ui.tblFaclist.setItem(index, col, item)
+
                 btn_del = QtWidgets.QPushButton()
-                btn_del.setIcon(QIcon("./img/basura.png"))
-                btn_del.setIconSize(QtCore.QSize(26, 26))
-                btn_del.setFixedSize(32, 32)
-                btn_del.setStyleSheet("border: none; background-color: transparent")
+                btn_del.setText("")
+                btn_del.setIcon(QIcon("img/basura.png"))
+                btn_del.setIconSize(QtCore.QSize(28, 28))
+                btn_del.setFixedSize(QtCore.QSize(32, 32))
+                btn_del.setStyleSheet("background-color: transparent; border: none")
+                btn_del.setProperty("numFac", record[0])
                 btn_del.clicked.connect(Invoice.deleteInvoice)
-                globals.ui.tablefacv.setCellWidget(index, 3, btn_del)
-                globals.ui.tablefacv.item(index, 0).setTextAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
-                globals.ui.tablefacv.item(index, 1).setTextAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
-                globals.ui.tablefacv.item(index, 2).setTextAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
 
-                index = index + 1
-            datos = records[0]
-            globals.ui.lblnumfac.setText(str(datos[0]))
-            globals.ui.txtDniFac.setText(str(datos[1]))
-            globals.ui.lblFechafac.setText(str(datos[2]))
-        except Exception as error:
-            print("error load tablafac", error)
 
-    @staticmethod
-    def loadInvoiceirst():
+                globals.ui.tblFaclist.setCellWidget(index, 3, btn_del)
+
+                index += 1
+
+        except Exception as e:
+            print("Error en guardar factura", e)
+
+    def deleteInvoice(item):
         try:
-            globals.ui.txtDniFac.setText("00000000T")
-            globals.ui.lblnumfac.setText("")
-            globals.ui.lblFechafac.setText("")
-            Invoice.searchInvoice()
-            header = globals.ui.tabsales.horizontalHeader()
-            header.setSectionResizeMode(5, QtWidgets.QHeaderView.ResizeMode.Fixed)
-            globals.ui.tabsales.setColumnWidth(5, 36)
+            btn = QtWidgets.QApplication.instance().sender()
+            numFac = btn.property("numFac")
+            ventas = Conexion.getSales(numFac)
+            if ventas and len(ventas) > 0:
+                mbox = QtWidgets.QMessageBox()
+                mbox.setWindowTitle("Warning")
+                mbox.setIcon(QtWidgets.QMessageBox.Icon.Warning)
+                mbox.setText("The invoice is not empty")
+                mbox.setStandardButtons(QtWidgets.QMessageBox.StandardButton.Ok)
+                if mbox.exec():
+                    mbox.hide
 
-        except Exception as error:
-            print("error en loadInvoiceirst", error)
+                return False
 
-    @staticmethod
-    def selectInvoice():
+
+            if Conexion.deleteInvoice(numFac):
+                mbox = QtWidgets.QMessageBox()
+                mbox.setWindowTitle("Information")
+                mbox.setIcon(QtWidgets.QMessageBox.Icon.Information)
+                mbox.setText("The invoice has been deleted")
+                mbox.setStandardButtons(QtWidgets.QMessageBox.StandardButton.Ok)
+                if mbox.exec():
+                    mbox.hide
+
+                Invoice.loadInvoices(self=None)
+
+            else:
+                mbox = QtWidgets.QMessageBox()
+                mbox.setWindowTitle("Warning")
+                mbox.setIcon(QtWidgets.QMessageBox.Icon.Warning)
+                mbox.setText("Error deleting the invoice in the database")
+                mbox.setStandardButtons(QtWidgets.QMessageBox.StandardButton.Ok)
+                if mbox.exec():
+                    mbox.hide
+
+
+
+
+        except Exception as e:
+            print("Error en guardar factura", e)
+
+
+    def getOneInvoice(invoiceId):
         try:
-            row = globals.ui.tablefacv.currentRow()
-            if row == -1:
+            record = Conexion.getOneInvoice(invoiceId)
+        except Exception as e:
+            print("Error en cargar factura", e)
+
+    def selectInvoice(self):
+        try:
+            row = globals.ui.tblFaclist.selectedItems()
+            if not row or len(row) < 3:
                 return
 
-            id_factura = globals.ui.tablefacv.item(row, 0).text()
+            invoice_id = row[0].text()
+            dni = row[1].text()
 
-            recordinvoice = Conexion.dataOneInvoice(id_factura)
-            if not recordinvoice:
-                QtWidgets.QMessageBox.warning(
-                    None,
-                    "Error",
-                    f"No se encontraron datos para la factura con ID {id_factura}.",
-                )
-                return
+            globals.ui.lblNumfac.setText(invoice_id)
+            globals.ui.txtDnifac.setText(dni)
+            globals.ui.lblFechafac.setText(row[2].text())
+            Invoice.buscaCli(dni)
 
-            globals.ui.lblnumfac.setText(str(recordinvoice[0]))
-            globals.ui.txtDniFac.setText(str(recordinvoice[1]))
-            globals.ui.lblFechafac.setText(str(recordinvoice[2]))
+            lines = []
+            try:
+                lines = Conexion.getSales(invoice_id)
+            except Exception:
+                lines = []
 
-            recordcustomer = Conexion.dataOneCustomer(recordinvoice[1])
-            if recordcustomer:
-                globals.ui.lblNamefac.setText(recordcustomer[2] + " " + recordcustomer[3])
-                globals.ui.lblTipofac.setText(recordcustomer[9])
-                globals.ui.lblnumfac_3.setText(
-                    recordcustomer[6] + "   " + recordcustomer[8] + "   " + recordcustomer[7]
-                )
-                globals.ui.lblnumfac_4.setText(str(recordcustomer[5]))
+            # Bloqueamos señales para evitar recursión al llenar la tabla
+            globals.ui.tblSales.blockSignals(True)
 
-                if recordcustomer[10] == "True":
-                    globals.ui.lblStatusfac.setText("Activo")
-                else:
-                    globals.ui.lblStatusfac.setText("Inactivo")
+            if lines:
+                globals.ui.btnSaveSale.setEnabled(False)
+                globals.ui.tblSales.setRowCount(len(lines))
+                globals.linesales = []
+                for i, ln in enumerate(lines):
+                    idSale, idFac, pid, name, price, qty, total = ln
 
-            Invoice.cargarVentas(id_factura)
+                    # Usamos una lista de valores para facilitar el llenado
+                    valores = [str(idSale), str(pid), str(name), f"{float(price):.2f}", f"{int(qty):.2f}",
+                               f"{float(total):.2f}"]
 
-        except Exception as error:
-            print("Error en selectInvoice:", error)
+                    for c, valor in enumerate(valores):
+                        item = QtWidgets.QTableWidgetItem(valor)
+                        # Aplicamos flags
+                        if c in (1, 4):
+                            item.setFlags(
+                                QtCore.Qt.ItemFlag.ItemIsSelectable | QtCore.Qt.ItemFlag.ItemIsEnabled | QtCore.Qt.ItemFlag.ItemIsEditable)
+                        else:
+                            item.setFlags(QtCore.Qt.ItemFlag.ItemIsSelectable | QtCore.Qt.ItemFlag.ItemIsEnabled)
+
+                        globals.ui.tblSales.setItem(i, c, item)
+
+                    globals.linesales.append([idSale, pid, name, float(price), int(qty), float(total)])
+
+                globals.ui.tblSales.setEditTriggers(QtWidgets.QAbstractItemView.EditTrigger.NoEditTriggers)
+                Invoice.calculateTotals()
+
+
+            else:
+                # Factura nueva/vacía
+                globals.ui.tblSales.setRowCount(1)
+                for c in range(6):
+                    item = QtWidgets.QTableWidgetItem("")
+                    if c in (1, 4):
+                        item.setFlags(
+                            QtCore.Qt.ItemFlag.ItemIsSelectable | QtCore.Qt.ItemFlag.ItemIsEnabled | QtCore.Qt.ItemFlag.ItemIsEditable)
+                    else:
+                        item.setFlags(QtCore.Qt.ItemFlag.ItemIsSelectable | QtCore.Qt.ItemFlag.ItemIsEnabled)
+                    globals.ui.tblSales.setItem(0, c, item)
+
+                globals.ui.tblSales.setEditTriggers(QtWidgets.QAbstractItemView.EditTrigger.AllEditTriggers)
+                globals.linesales = []
+                Invoice.calculateTotals()
+
+            Invoice.updateSalesStyle()
+            # Desbloqueamos señales ANTES de aplicar estilos y botones
+            globals.ui.tblSales.blockSignals(False)
+
+            # Aplicar estilos y botones fila por fila de forma segura
+            for r in range(globals.ui.tblSales.rowCount()):
+                Invoice.showDeleteButton(r)
+
+
+        except Exception as e:
+            print("error en selectInvoice ", e)
 
     @staticmethod
-    def selectDniInvoice():
+    def selectInvoiceById(invoice_id):
         try:
-            dni = globals.ui.txtDnicli.text()
+            try:
+                lines = Conexion.getSales(invoice_id)
+            except Exception:
+                lines = []
 
-            recordinvoice = Conexion.dataOnlyOneInvoice(dni)
-            if not recordinvoice:
-                QtWidgets.QMessageBox.warning(
-                    None,
-                    "Error",
-                    f"No se encontraron datos para la factura con ID {dni}.",
-                )
-                return
+            if lines:
+                globals.ui.btnSaveSale.setEnabled(False)
+                globals.ui.tblSales.setRowCount(len(lines))
+                globals.linesales = []
+                for i, ln in enumerate(lines):
+                    idSale, idFac, pid, name, price, qty, total = ln
+                    globals.ui.tblSales.setItem(i, 0, QtWidgets.QTableWidgetItem(str(idSale)))
+                    globals.ui.tblSales.setItem(i, 1, QtWidgets.QTableWidgetItem(str(pid)))
+                    globals.ui.tblSales.setItem(i, 2, QtWidgets.QTableWidgetItem(str(name)))
+                    globals.ui.tblSales.setItem(i, 3, QtWidgets.QTableWidgetItem(f"{float(price):.2f}"))
+                    globals.ui.tblSales.setItem(i, 4, QtWidgets.QTableWidgetItem(f"{int(qty):.2f}"))
+                    globals.ui.tblSales.setItem(i, 5, QtWidgets.QTableWidgetItem(f"{float(total):.2f}"))
 
-            globals.ui.lblnumfac.setText(str(recordinvoice[0]))
-            globals.ui.txtDniFac.setText(str(recordinvoice[1]))
-            globals.ui.lblFechafac.setText(str(recordinvoice[2]))
+                    # make each cell in the row non-editable except IDProd (2) and Amount (5)
+                    for c in range(6):
+                        it = globals.ui.tblSales.item(i, c)
+                        if it:
+                            if c in (1, 4):
+                                it.setFlags(QtCore.Qt.ItemFlag.ItemIsSelectable | QtCore.Qt.ItemFlag.ItemIsEnabled | QtCore.Qt.ItemFlag.ItemIsEditable)
+                            else:
+                                it.setFlags(QtCore.Qt.ItemFlag.ItemIsSelectable | QtCore.Qt.ItemFlag.ItemIsEnabled)
 
-            recordcustomer = Conexion.dataOneCustomer(recordinvoice[1])
-            if recordcustomer:
-                globals.ui.lblNamefac.setText(recordcustomer[2] + " " + recordcustomer[3])
-                globals.ui.lblTipofac.setText(recordcustomer[9])
-                globals.ui.lblnumfac_3.setText(
-                    recordcustomer[6] + "   " + recordcustomer[8] + "   " + recordcustomer[7]
-                )
-                globals.ui.lblnumfac_4.setText(str(recordcustomer[5]))
+                    # store internal representation: [idSale, idFac, pid, name, price, qty, total]
+                    globals.linesales.append([idSale, pid, name, float(price), int(qty), float(total)])
 
-                if recordcustomer[10] == "True":
-                    globals.ui.lblStatusfac.setText("Activo")
-                else:
-                    globals.ui.lblStatusfac.setText("Inactivo")
+                globals.ui.tblSales.setEditTriggers(QtWidgets.QAbstractItemView.EditTrigger.NoEditTriggers)
 
-        except Exception as error:
-            print("Error en selectDniInvoice:", error)
+                # Recalculate subtotal for this invoice
+
+                iva = 0.21
+                globals.ui.lblSubtotal.setText(f"{globals.subtotal:.2f} €")
+                globals.ui.lblIva.setText(f"{globals.subtotal * iva:.2f} €")
+                total = round(globals.subtotal + (globals.subtotal * iva), 2)
+                globals.ui.lblTotal.setText(f"{total:.2f} €")
+
+            else:
+                # New / empty invoice: allow editing, clear table and subtotal
+                globals.ui.tblSales.setRowCount(1)
+                # Ensure 7 columns exist and fill with empty items
+                for c in range(6):
+                    globals.ui.tblSales.setItem(0, c, QtWidgets.QTableWidgetItem(""))
+
+                # Keep idSale and idFac empty for new invoice; product id editable (col 2)
+                globals.ui.tblSales.item(0, 0).setText("")
+
+                # Set item flags: only columns 2 (IDProd) and 5 (Amount) editable
+                for c in range(6):
+                    it = globals.ui.tblSales.item(0, c)
+                    if it:
+                        if c in (1, 4):
+                            it.setFlags(QtCore.Qt.ItemFlag.ItemIsSelectable | QtCore.Qt.ItemFlag.ItemIsEnabled | QtCore.Qt.ItemFlag.ItemIsEditable)
+                        else:
+                            it.setFlags(QtCore.Qt.ItemFlag.ItemIsSelectable | QtCore.Qt.ItemFlag.ItemIsEnabled)
+
+                globals.ui.tblSales.setEditTriggers(QtWidgets.QAbstractItemView.EditTrigger.AllEditTriggers)
+                globals.linesales = []
+                globals.subtotal = 0.0
+                globals.ui.lblSubtotal.setText(f"0.00 €")
+                globals.ui.lblIva.setText(f"0.00 €")
+                globals.ui.lblTotal.setText(f"0.00 €")
+            for row in range(globals.ui.tblSales.rowCount()):
+                Invoice.showDeleteButton(row-1)
+        except Exception as e:
+            print("error en selectInvoiceById ", e)
 
     @staticmethod
-    def activeSales(row=None):
+    def activeSales(self=None, row=None):
         try:
-            fact = globals.ui.lblnumfac.text()
-
-            if Conexion.existeFacturaSales(fact):
-                return
-
-            table = globals.ui.tabsales
+            # If no row provided, add first editable row
             if row is None:
-                row = table.rowCount()
+                row = 0
+                globals.ui.tblSales.setRowCount(1)
+            else:
+                if row >= globals.ui.tblSales.rowCount():
+                    globals.ui.tblSales.setRowCount(row + 1)
 
-            if row >= globals.ui.tabsales.rowCount():
-                globals.ui.tabsales.setRowCount(row + 1)
+            globals.ui.tblSales.setStyleSheet("""
+                                                /* Fila seleccionada */
+                                                QTableWidget::item:selected {
+                                                    background-color: rgb(255, 255, 202);
+                                                    color: black;
+                                                }
+                                                """)
 
-            center_align = QtCore.Qt.AlignmentFlag.AlignCenter
+            # Initialize empty cells for 7 columns
+            for c in range(6):
+                globals.ui.tblSales.setItem(row, c, QtWidgets.QTableWidgetItem(""))
 
-            item_code = QtWidgets.QTableWidgetItem("")
-            item_code.setTextAlignment(center_align)
-            globals.ui.tabsales.setItem(row, 0, item_code)
+            # Make editable only product id (2) and amount (5)
+            for c in range(6):
+                it = globals.ui.tblSales.item(row, c)
+                if it:
+                    if c in (1, 4):
+                        it.setFlags(QtCore.Qt.ItemFlag.ItemIsSelectable | QtCore.Qt.ItemFlag.ItemIsEnabled | QtCore.Qt.ItemFlag.ItemIsEditable)
+                    else:
+                        it.setFlags(QtCore.Qt.ItemFlag.ItemIsSelectable | QtCore.Qt.ItemFlag.ItemIsEnabled)
 
-            globals.ui.tabsales.setItem(row, 1, QtWidgets.QTableWidgetItem(""))
+            # Align columns: product id (2) and amount (5) centered
+            globals.ui.tblSales.item(row, 1).setTextAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
+            globals.ui.tblSales.item(row, 4).setTextAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
 
-            item_price = QtWidgets.QTableWidgetItem("")
-            item_price.setTextAlignment(center_align)
-            globals.ui.tabsales.setItem(row, 2, item_price)
-
-            item_qty = QtWidgets.QTableWidgetItem("")
-            item_qty.setTextAlignment(center_align)
-            globals.ui.tabsales.setItem(row, 3, item_qty)
-
-            item_total = QtWidgets.QTableWidgetItem("")
-            item_total.setTextAlignment(
-                QtCore.Qt.AlignmentFlag.AlignRight |
-                QtCore.Qt.AlignmentFlag.AlignVCenter
-            )
-            globals.ui.tabsales.setItem(row, 4, item_total)
-
-            btn_del = QtWidgets.QPushButton()
-            btn_del.setIcon(QIcon("./img/basura.png"))
-            btn_del.setIconSize(QtCore.QSize(26, 26))
-            btn_del.setFixedSize(32, 32)
-            btn_del.setStyleSheet("border: none; background-color: transparent")
-            btn_del.clicked.connect(Invoice.deleteSales)
-            globals.ui.tabsales.setCellWidget(row, 5, btn_del)
-
-        except Exception as error:
-            print("error en activeSales", error)
+        except Exception as e:
+            print("Error en guardar factura", e)
+            import traceback
+            traceback.print_exc()
 
     @staticmethod
-    def cellChangedSales(item):
+    def cellsChanged(item):
         try:
-            if item is None:
-                return
-
+            iva = 0.21
             row = item.row()
             col = item.column()
 
-            if col not in (0, 3):
+            # Only react on product ID (2) or amount (5)
+            if col not in (1, 4):
                 return
-
-            globals.ui.tabsales.blockSignals(True)
 
             value = item.text().strip()
-
-            if col == 0:
-                if value == "":
-                    globals.ui.tabsales.setItem(row, 1, QtWidgets.QTableWidgetItem(""))
-                    globals.ui.tabsales.setItem(row, 2, QtWidgets.QTableWidgetItem(""))
-                else:
-                    data = Conexion.selectProduct(value)
-                    if data:
-                        globals.ui.tabsales.setItem(
-                            row, 1, QtWidgets.QTableWidgetItem(str(data[0]))
-                        )
-                        globals.ui.tabsales.setItem(
-                            row, 2, QtWidgets.QTableWidgetItem(str(data[1]))
-                        )
-                        globals.ui.tabsales.item(
-                            row, 2
-                        ).setTextAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
-                    else:
-                        mbox = QtWidgets.QMessageBox()
-                        mbox.setIcon(QtWidgets.QMessageBox.Icon.Warning)
-                        mbox.setWindowTitle("Warning")
-                        mbox.setText("Product not exists")
-                        mbox.setStandardButtons(
-                            QtWidgets.QMessageBox.StandardButton.Ok
-                        )
-                        if mbox.exec() == QtWidgets.QMessageBox.StandardButton.Ok:
-                            mbox.hide()
-                        globals.ui.tabsales.setItem(
-                            row, 0, QtWidgets.QTableWidgetItem("")
-                        )
-
-            if col in (0, 3):
-                item_qty = globals.ui.tabsales.item(row, 3)
-                item_price = globals.ui.tabsales.item(row, 2)
-
-                if item_qty and item_price:
-                    try:
-                        cantidad = float(item_qty.text())
-                        precio = float(item_price.text())
-                        tot = round(precio * cantidad, 2)
-
-                        globals.ui.tabsales.setItem(
-                            row, 4, QtWidgets.QTableWidgetItem(str(tot))
-                        )
-                        globals.ui.tabsales.item(
-                            row, 4
-                        ).setTextAlignment(
-                            QtCore.Qt.AlignmentFlag.AlignRight |
-                            QtCore.Qt.AlignmentFlag.AlignVCenter
-                        )
-                    except ValueError:
-                        globals.ui.tabsales.setItem(
-                            row, 4, QtWidgets.QTableWidgetItem("0.00")
-                        )
-
-            grand_subtotal = 0.0
-            for r in range(globals.ui.tabsales.rowCount()):
-                item_total = globals.ui.tabsales.item(r, 4)
-                if item_total and item_total.text():
-                    try:
-                        grand_subtotal += float(item_total.text())
-                    except ValueError:
-                        pass
-
-            globals.subtotal = grand_subtotal
-
-            iva = 0.21
-            totaliva = round(globals.subtotal * iva, 2)
-            total = round(globals.subtotal + totaliva, 2)
-
-            globals.ui.lblSubtotal.setText(f"{globals.subtotal:.2f} €")
-            globals.ui.lblIVA.setText(f"{totaliva:.2f} €")
-            globals.ui.lblTotal.setText(f"{total:.2f} €")
-
-            row_items = [globals.ui.tabsales.item(row, i) for i in range(5)]
-            is_row_complete = all(it and it.text().strip() for it in row_items)
-
-            fact = globals.ui.lblnumfac.text().strip()
-
-            if not fact.isdigit():
+            if not value:
                 return
 
-            if is_row_complete:
-                if not Conexion.existeFacturaSales(fact):
-                    if row == globals.ui.tabsales.rowCount() - 1:
-                        next_row = globals.ui.tabsales.rowCount()
-                        QtCore.QTimer.singleShot(
-                            0, lambda: Invoice.activeSales(next_row)
-                        )
+            globals.ui.tblSales.blockSignals(True)
 
-                    sale = [
-                        int(globals.ui.lblnumfac.text()),
-                        int(row_items[0].text()),
-                        row_items[1].text(),
-                        float(row_items[2].text()),
-                        int(row_items[3].text()),
-                        float(row_items[4].text()),
-                    ]
-                    globals.linesales.append(sale)
+            # If product ID changed, try to auto-fill name (3) and price (4)
+            if col == 1:
+                data = Conexion.selectProduct(value)
+                if not data:
+                    QtWidgets.QMessageBox.critical(None, "Error", "Product not found")
+                    globals.ui.tblSales.blockSignals(False)
+                    globals.ui.tblSales.setItem(row, 1, QtWidgets.QTableWidgetItem(""))
+                    return
+                # expected data: (name, price)
+                name = data[0]
+                price = float(data[1])
+                # Set name and price as non-editable items
+                name_item = QtWidgets.QTableWidgetItem(str(name))
+                name_item.setFlags(QtCore.Qt.ItemFlag.ItemIsSelectable | QtCore.Qt.ItemFlag.ItemIsEnabled)
+                globals.ui.tblSales.setItem(row, 2, name_item)
 
-        except Exception as error:
-            print("Error in cellChangedSales:", error)
+                price_item = QtWidgets.QTableWidgetItem(f"{price:.2f}")
+                price_item.setFlags(QtCore.Qt.ItemFlag.ItemIsSelectable | QtCore.Qt.ItemFlag.ItemIsEnabled)
+                globals.ui.tblSales.setItem(row, 3, price_item)
+
+            # Calculate line total if we have price (4) and amount (5)
+            price_item = globals.ui.tblSales.item(row, 3)
+            qty_item = globals.ui.tblSales.item(row, 4)
+
+            if price_item and qty_item and price_item.text().strip() and qty_item.text().strip():
+                realQty = Invoice.checkStock(globals.ui.tblSales.item(row, 1).text().strip(), qty_item.text().strip())
+                item = QtWidgets.QTableWidgetItem(str(realQty))
+                globals.ui.tblSales.setItem(row, 4, item)
+
+                try:
+                    price = float(price_item.text())
+                    qty = int(realQty)
+                except Exception:
+                    price = 0.0
+                    qty = 0.0
+
+
+                tot = round(price * qty, 2)
+                tot_item = QtWidgets.QTableWidgetItem(f"{tot:.2f}")
+                tot_item.setFlags(QtCore.Qt.ItemFlag.ItemIsSelectable | QtCore.Qt.ItemFlag.ItemIsEnabled)
+                globals.ui.tblSales.setItem(row, 5, tot_item)
+
+            iva = 0.21
+            subtotal = 0.0
+            for r in range(globals.ui.tblSales.rowCount()):
+                it = globals.ui.tblSales.item(r, 5)
+                if it and it.text().strip():
+                    try:
+                        subtotal += float(it.text())
+                    except Exception:
+                        pass
+
+            globals.subtotal = subtotal
+            globals.ui.lblSubtotal.setText(f"{globals.subtotal:.2f} €")
+            globals.ui.lblIva.setText(f"{globals.subtotal * iva:.2f} €")
+            total = round(globals.subtotal + (globals.subtotal * iva), 2)
+            globals.ui.lblTotal.setText(f"{total:.2f} €")
+
+            # If both product id and qty are filled and this is the last row, append a new editable row
+            last_row = globals.ui.tblSales.rowCount() - 1
+            current_has_product = globals.ui.tblSales.item(row, 1) and globals.ui.tblSales.item(row, 1).text().strip()
+            current_has_qty = globals.ui.tblSales.item(row, 4) and globals.ui.tblSales.item(row, 4).text().strip()
+
+            if row == last_row and current_has_product and current_has_qty:
+                record = [globals.ui.lblNumfac.text().strip(), globals.ui.tblSales.item(row, 1).text().strip(),
+                         globals.ui.tblSales.item(row, 2).text().strip(), globals.ui.tblSales.item(row, 3).text().strip(),
+                         globals.ui.tblSales.item(row, 4).text().strip(), globals.ui.tblSales.item(row, 5).text().strip()]
+                globals.linesales.append(record)
+                globals.ui.tblSales.setRowCount(last_row + 2)
+                Invoice.showDeleteButton(last_row + 1)
+                # Initialize new row (editable on cols 2 and 5)
+                for c in range(6):
+                    it = globals.ui.tblSales.item(last_row + 1, c)
+                    if it:
+                        if c in (1, 4):
+                            it.setFlags(QtCore.Qt.ItemFlag.ItemIsSelectable | QtCore.Qt.ItemFlag.ItemIsEnabled | QtCore.Qt.ItemFlag.ItemIsEditable)
+                        else:
+                            it.setFlags(QtCore.Qt.ItemFlag.ItemIsSelectable | QtCore.Qt.ItemFlag.ItemIsEnabled)
+
+
+
+        except Exception as e:
+            print("Error en guardar factura", e)
+            import traceback
+            traceback.print_exc()
 
         finally:
-            globals.ui.tabsales.blockSignals(False)
+            globals.ui.tblSales.blockSignals(False)
 
     @staticmethod
-    def saveSales(self=None):
-        from products import Products
+    def checkStock(prodID, qty):
         try:
-            fact = globals.ui.lblnumfac.text()
+            if qty in (None, '', 'None'):
+                return 0
 
-            if Conexion.existeFacturaSales(fact):
-                Reports.ticket(self)
+            qty = int(float(qty))
+            prod = Conexion.selectFullProduct(prodID)
+
+            if not prod or prod[2] in (None, 'None'):
+                return 0
+
+            stock = int(prod[2])
+
+            return min(stock, qty)
+
+        except Exception as e:
+            print("error en checkStock ", e)
+
+    @staticmethod
+    def calculateTotals():
+        iva = 0.21
+        subtotal = 0.0
+        for r in range(globals.ui.tblSales.rowCount()):
+            it = globals.ui.tblSales.item(r, 5)
+            if it and it.text().strip():
+                try:
+                    subtotal += float(it.text())
+                except Exception:
+                    pass
+
+        globals.subtotal = subtotal
+        globals.ui.lblSubtotal.setText(f"{globals.subtotal:.2f} €")
+        globals.ui.lblIva.setText(f"{globals.subtotal * iva:.2f} €")
+        total = round(globals.subtotal + (globals.subtotal * iva), 2)
+        globals.ui.lblTotal.setText(f"{total:.2f} €")
+
+    def saveSale(self):
+        try:
+            id = Invoice.invoiceExist(self)
+            if (id != None):
+                for row in globals.linesales:
+                    row[0] = id
+
+            data  = globals.linesales
+            success = False
+            for row in data:
+                Conexion.saveSale(row)
+                success = True
+
+            if success:
+                mbox = QtWidgets.QMessageBox()
+                mbox.setWindowTitle("Information")
+                mbox.setIcon(QtWidgets.QMessageBox.Icon.Information)
+                mbox.setText("The sale has been saved")
+                mbox.setStandardButtons(QtWidgets.QMessageBox.StandardButton.Ok)
+                if mbox.exec():
+                    mbox.hide
+
+                globals.ui.tblSales.setRowCount(0)
+                Invoice.selectInvoiceById(globals.linesales[0][0])
+                print(globals.linesales[0][0])
+
+
             else:
-                correct = False
-                for data in globals.linesales:
-                    correct = Conexion.saveSales(data)
-                    if correct:
-                        Conexion.descontarStock(data[1], data[4])
+                mbox = QtWidgets.QMessageBox()
+                mbox.setWindowTitle("Warning")
+                mbox.setIcon(QtWidgets.QMessageBox.Icon.Warning)
+                mbox.setText("Error saving the sale.")
+                mbox.setStandardButtons(QtWidgets.QMessageBox.StandardButton.Ok)
+                if mbox.exec():
+                    mbox.hide
 
-                if globals.linesales[-1] and correct:
-                    mbox = QtWidgets.QMessageBox()
-                    mbox.setIcon(QtWidgets.QMessageBox.Icon.Information)
-                    mbox.setWindowTitle("Sales Saved")
-                    mbox.setText(
-                        "Sales saved. Printing Invoice..."
-                    )
-                    mbox.setStandardButtons(
-                        QtWidgets.QMessageBox.StandardButton.Ok
-                    )
-                    Reports.ticket(self)
 
-                    if mbox.exec() == QtWidgets.QMessageBox.StandardButton.Ok:
-                        Invoice.bloquearTablaSales()
-                        globals.linesales.clear()
-                        globals.ui.tabsales.setRowCount(0)
-                        mbox.hide()
+            Invoice.loadInvoices(self)
+            Invoice.products.loadTableProd()
 
-                        Products.loadTableProducts()
+        except Exception as e:
+            print("Error en guardar factura", e)
 
-        except Exception as error:
-            print("Error in saveSales:", error)
+
+    def invoiceExist(self):
+        try:
+            if globals.linesales[0][0] == "":
+                globals.ui.txtDnifac.setText("00000000T")
+                id = Invoice.saveWithReturn(self)
+                return id
+        except Exception as e:
+            print("Error en guardar factura", e)
 
     @staticmethod
-    def cargarVentas(idfac):
+    def showDeleteButton(row):
         try:
-            data = Conexion.dataOneSale(idfac)
-            table = globals.ui.tabsales
+            item = globals.ui.tblSales.item(0, 0)
 
-            table.setRowCount(0)
+            if item and item.text() == "":
+                btn_del = QtWidgets.QPushButton()
+                btn_del.setText("")
+                btn_del.setIcon(QIcon("img/basura.png"))
+                btn_del.setIconSize(QtCore.QSize(28, 28))
+                btn_del.setFixedSize(QtCore.QSize(32, 32))
+                btn_del.setStyleSheet("background-color: transparent; border: none")
+                btn_del.setProperty("row", row)
+                btn_del.clicked.connect(Invoice.deleteLine)
 
-            if not data:
-                Invoice.activeSales()
+                globals.ui.tblSales.setCellWidget(row, 6, btn_del)
             else:
-                table.setRowCount(len(data))
+                globals.ui.tblSales.setCellWidget(row, 6, QtWidgets.QPushButton())
 
-                for row_index, sale_row in enumerate(data):
-                    for col_index, cell_value in enumerate(sale_row):
-                        table_item = QtWidgets.QTableWidgetItem(str(cell_value))
-                        table.setItem(row_index, col_index, table_item)
+        except Exception as e:
+            print("Error en mostrar boton", e)
 
-                    btn_del = QtWidgets.QPushButton()
-                    btn_del.setIcon(QIcon("./img/basura.png"))
-                    btn_del.setIconSize(QtCore.QSize(26, 26))
-                    btn_del.setFixedSize(32, 32)
-                    btn_del.setStyleSheet("border: none; background-color: transparent")
-                    btn_del.clicked.connect(Invoice.deleteSales)
 
-                    table.setCellWidget(row_index, 5, btn_del)
+    def deleteLine(self):
+        try:
+            btn = QtWidgets.QApplication.instance().sender()
+            table = globals.ui.tblSales
 
-            Invoice.bloquearTablaSales()
+            pos = btn.mapTo(table.viewport(), btn.rect().center())
+            row = table.indexAt(pos).row()
 
-        except Exception as error:
-            print("Error en cargarVentas:", error)
+            if row > 0:
+                table.removeRow(row)
+                Invoice.calculateTotals()
+
+            Invoice.calculateTotals()
+        except Exception as e:
+            print("Error en eliminar linea", e)
+
+    def printInvoice(self):
+        try:
+            id = globals.ui.lblNumfac.text().strip()
+            if id == "":
+                mbox = QtWidgets.QMessageBox()
+                mbox.setWindowTitle("Warning")
+                mbox.setIcon(QtWidgets.QMessageBox.Icon.Warning)
+                mbox.setText("Error printing the invoice.")
+                mbox.setStandardButtons(QtWidgets.QMessageBox.StandardButton.Ok)
+                if mbox.exec():
+                    mbox.hide
+            else:
+                r = Reports()
+                r.reportInvoice(id)
+
+        except Exception as e:
+            print("Error en guardar factura", e)
 
     @staticmethod
-    def bloquearTablaSales():
+    def updateSalesStyle():
         try:
-            table = globals.ui.tabsales
+            table = globals.ui.tblSales
+            table.blockSignals(True)
             for row in range(table.rowCount()):
                 for col in range(table.columnCount()):
                     item = table.item(row, col)
-                    if item:
-                        item.setFlags(
-                            item.flags() &
-                            ~QtCore.Qt.ItemFlag.ItemIsEditable
-                        )
+                    if item is not None:
+                        if col in (0, 1, 3, 4):
+                            item.setTextAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
+                        elif col == 5:
+                            item.setTextAlignment(QtCore.Qt.AlignmentFlag.AlignRight | QtCore.Qt.AlignmentFlag.AlignVCenter)
 
-        except Exception as error:
-            print("Error en bloquearTablaSales:", error)
-
-    @staticmethod
-    def deleteInvoice():
-        try:
-            fact = globals.ui.lblnumfac.text()
-
-            if Conexion.existeFacturaSales(fact):
-                mbox = QtWidgets.QMessageBox()
-                mbox.setIcon(QtWidgets.QMessageBox.Icon.Information)
-                mbox.setWindowTitle("Can't delete Invoice")
-                mbox.setText("This invoice have sales it can't be deleted.")
-                mbox.setStandardButtons(QtWidgets.QMessageBox.StandardButton.Ok)
-                if mbox.exec() == QtWidgets.QMessageBox.StandardButton.Ok:
-                    mbox.hide()
-            else:
-                Conexion.deleteInvoice(fact)
-                mbox = QtWidgets.QMessageBox()
-                mbox.setIcon(QtWidgets.QMessageBox.Icon.Information)
-                mbox.setWindowTitle("Deleted invoice")
-                mbox.setText("Invoice Nº" + str(fact) + " has been successfully deleted.")
-                mbox.setStandardButtons(QtWidgets.QMessageBox.StandardButton.Ok)
-                if mbox.exec() == QtWidgets.QMessageBox.StandardButton.Ok:
-                    mbox.hide()
-                Invoice.loadTableInvoice()
-        except Exception as error:
-            print("Error en deleteInvoice:", error)
-
-    @staticmethod
-    def deleteSales():
-        try:
-            btn = globals.ui.tabsales.sender()
-
-            if not btn:
-                return
-
-            table = globals.ui.tabsales
-
-            for row in range(table.rowCount()):
-                if table.cellWidget(row, 5) == btn:
-                    break
-            else:
-                return
-
-            fact = globals.ui.lblnumfac.text()
-
-            if Conexion.existeFacturaSales(fact):
-                mbox = QtWidgets.QMessageBox()
-                mbox.setIcon(QtWidgets.QMessageBox.Icon.Warning)
-                mbox.setWindowTitle("No permitido")
-                mbox.setText("Esta factura ya está guardada y no se pueden borrar líneas.")
-                mbox.setStandardButtons(QtWidgets.QMessageBox.StandardButton.Ok)
-                mbox.exec()
-                return
-
-            table.removeRow(row)
-
-            if row < len(globals.linesales):
-                globals.linesales.pop(row)
-
-            subtotal = 0.0
-            for r in range(table.rowCount()):
-                item_total = table.item(r, 4)
-                if item_total and item_total.text():
-                    subtotal += float(item_total.text())
-
-            globals.subtotal = subtotal
-            iva = round(subtotal * 0.21, 2)
-            total = round(subtotal + iva, 2)
-
-            globals.ui.lblSubtotal.setText(f"{subtotal:.2f} €")
-            globals.ui.lblIVA.setText(f"{iva:.2f} €")
-            globals.ui.lblTotal.setText(f"{total:.2f} €")
-
-        except Exception as error:
-            print("Error en deleteSales:", error)
+            table.blockSignals(False)
+        except Exception as e:
+            print("Error en guardar factura", e)

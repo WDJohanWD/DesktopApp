@@ -1,11 +1,8 @@
 import events
 import globals
-from dlgAbout import Ui_dlgAbout
 from dlgCalendar import *
 from datetime import datetime
-
-from events import *
-
+from dlgAbout import *
 
 class Calendar(QtWidgets.QDialog):
     def __init__(self):
@@ -16,17 +13,15 @@ class Calendar(QtWidgets.QDialog):
         month = datetime.now().month
         year = datetime.now().year
 
-        globals.vencal.Calendar.setSelectedDate(QtCore.QDate(year, month, day))
+        globals.vencal.Calendar.setSelectedDate((QtCore.QDate(year, month, day)))
         globals.vencal.Calendar.clicked.connect(events.Events.loadData)
 
-
-class DlgAbout(QtWidgets.QDialog):
+class About(QtWidgets.QDialog):
     def __init__(self):
-        super(DlgAbout, self).__init__()
+        super(About, self).__init__()
         globals.about = Ui_dlgAbout()
         globals.about.setupUi(self)
-        globals.about.btnCloseabout.clicked.connect(events.Events.closeabout)
-
+        globals.about.btnCloseabout.clicked.connect(events.Events.closeAbout)
 
 class FileDialogOpen(QtWidgets.QFileDialog):
     def __init__(self):

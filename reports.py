@@ -1,266 +1,235 @@
-import os
-from datetime import datetime
-import globals
+from datetime import *
+
 from reportlab.pdfgen import canvas
-from conexion import *
+import os
+
+from conexion import Conexion
+from globals import subtotal
 
 
-class Reports:
+class Reports():
 
     @staticmethod
-    def footer(titulo):
+    def runCustomerReports():
+        report = Reports()
+        report.reportCustomers()
+
+    def footer(self, titulo):
         try:
-            globals.report.line(35, 60, 525, 60)
-            day = datetime.today().strftime("%d/%m/%Y %H:%M:%S")
-            globals.report.setFont('Helvetica', size=7)
-            globals.report.drawString(70, 50, day)
-            globals.report.drawString(250, 50, titulo)
-            globals.report.drawString(480, 50, str('Página: ' + str(globals.report.getPageNumber())))
-        except Exception as error:
-            print(error)
+            day = datetime.now().today()
+            day = day.strftime("%d/%m/%Y %H:%M:%S  -  ")
+            self.c.setFont('Helvetica', 7)
+            texto = day + titulo
+            self.c.drawString(50, 53, texto)
+            self.c.drawString(500, 53, str('Página: ' + str(self.c.getPageNumber())))
+        except Exception as e:
+            print('Error en footer',e)
 
-    @staticmethod
-    def topReport(titulo):
+    def toReport(self, titulo):
         try:
             path_logo = ".\\img\\logo.png"
-            if os.path.isfile(path_logo):
-                globals.report.line(35, 60, 525, 60)
-                globals.report.setFont('Helvetica-Bold', size=10)
-                globals.report.drawString(55, 785, "EMPRESA TEIS")
-                globals.report.drawCentredString(290, 675, titulo)
-                globals.report.line(35, 665, 525, 665)
-                globals.report.drawImage(path_logo, 490, 765, width=40, height=40)
-                globals.report.setFont('Helvetica', size=8)
-                globals.report.drawString(55, 760, "CIF: A12345678")
-                globals.report.drawString(55, 745, 'Avda. de Galicia, 101')
-                globals.report.drawString(55, 730, "Vigo - 36215 - España")
-                globals.report.drawString(55, 715, "Tlfo: 986 123 456")
-                globals.report.drawString(55, 700, "email: teis@mail.com")
-                globals.report.line(50, 800, 160, 800)
-                globals.report.line(50, 695, 160, 695)
-                globals.report.line(50, 800, 50, 695)
-                globals.report.line(160, 800, 160, 695)
+
+            if (path_logo):
+                self.c.line(40, 65, 550, 65)
+                self.c.setFont('Helvetica-Bold', 10)
+                self.c.drawString(55, 785, "EMPRESA TEIS")
+                self.c.drawImage(path_logo, 460, 720, width=80, height=80)
+                self.c.drawCentredString(300, 675, titulo)
+
+                # Company details
+                self.c.setFont('Helvetica', 9)
+                self.c.drawString(55, 760, "CIF: B12345678")
+                self.c.drawString(55, 745, "Dirección: Calle Galicia, 123")
+                self.c.drawString(55, 730, "Vigo 36215 - España")
+                self.c.drawString(55, 715, "Teléfono: +34 986 123 456")
+                self.c.drawString(55, 700, "Email: teis@mail.com")
+
+                self.c.rect(30, 685, 200, 90)
             else:
-                print("no se pudo cargar la imagen")
-        except Exception as error:
-            print(error)
+                print('No se pudo cargar el logo')
+
+        except Exception as e:
+            print('Error en toreport',e)
+
+
 
     def reportCustomers(self):
         try:
-            rootPath = ".\\reports"
-            if not os.path.exists(rootPath):
-                os.makedirs(rootPath)
-            data = datetime.today().strftime("%Y_%m_%d_%H_%M_%S")
-            namereportcli = data + "_reportcustomers.pdf"
-            pdf_path = os.path.join(rootPath, namereportcli)
-            globals.report = canvas.Canvas(pdf_path)
-            titulo = "Listado Clientes"
-            Reports.footer(titulo)
-            Reports.topReport(titulo)
-            var = False
-            records = Conexion.listTabCustomers(var)
+            rootPath = '.\\reports'
+            data = datetime.now().strftime("%m_%d_%Y_%I_%M_%S")
+            self.namereportcli = data + '_reportCustomers.pdf'
+            self.pdf_path = os.path.join(rootPath, self.namereportcli)
+            self.c = canvas.Canvas(self.pdf_path)
+            self.rootPath = rootPath
 
-            if not records:
-                print("No Customers")
-                return
 
-            items = ["DNI_NIE", "SURNAME", "NAME", "MOBILE", "CITY", "INVOICE TYPE", "STATE"]
-            globals.report.setFont("Helvetica-Bold", 10)
-            globals.report.drawString(45, 650, str(items[0]))
-            globals.report.drawString(105, 650, str(items[1]))
-            globals.report.drawString(185, 650, str(items[2]))
-            globals.report.drawString(245, 650, str(items[3]))
-            globals.report.drawString(330, 650, str(items[4]))
-            globals.report.drawString(390, 650, str(items[5]))
-            globals.report.drawString(480, 650, str(items[6]))
-            globals.report.line(35, 645, 525, 645)
+            titulo = "Listado de Clientes"
+            self.footer(titulo)
+            self.toReport(titulo)
+
+
+            records = Conexion.listCustomers(False)
+            items = ["DNI_NIE", "SURNAME", "NAME", "MOBILE", "CITY", "INVOICE TYPE", "STATUS"]
+            self.c.setFont("Helvetica-Bold", 10)
+            self.c.line(40, 665, 550, 665)
+            self.c.drawString(55, 651, str(items[0]))
+            self.c.drawString(120, 651, str(items[1]))
+            self.c.drawString(215, 651, str(items[2]))
+            self.c.drawString(270, 651, str(items[3]))
+            self.c.drawString(330, 651, str(items[4]))
+            self.c.drawString(395, 651, str(items[5]))
+            self.c.drawString(490, 651, str(items[6]))
+            self.c.line(40, 645, 550, 645)
             x = 55
             y = 630
 
             for record in records:
                 if y <= 90:
-                    globals.report.setFont("Helvetica-Oblique", 8)
-                    globals.report.drawString(450, 75, "Página siguiente...")
-                    globals.report.showPage()
-                    Reports.footer(titulo)
-                    Reports.topReport(titulo)
-                    items = ["DNI_NIE", "SURNAME", "NAME", "MOBILE", "CITY", "INVOICE TYPE", "STATE"]
-                    globals.report.setFont("Helvetica-Bold", 10)
-                    globals.report.drawString(45, 650, str(items[0]))
-                    globals.report.drawString(105, 650, str(items[1]))
-                    globals.report.drawString(185, 650, str(items[2]))
-                    globals.report.drawString(245, 650, str(items[3]))
-                    globals.report.drawString(330, 650, str(items[4]))
-                    globals.report.drawString(390, 650, str(items[5]))
-                    globals.report.drawString(480, 650, str(items[6]))
-                    globals.report.line(35, 645, 525, 645)
+                    self.c.setFont("Helvetica-Oblique", 8)
+                    self.c.drawString(450, 75, "Página siguiente...")
+                    self.c.showPage()  # crea una nueva página
+                    items = ["DNI_NIE", "SURNAME", "NAME", "MOBILE", "CITY", "INVOICE TYPE", "STATUS"]
+                    self.c.line(40, 665, 550, 665)
+                    self.c.setFont("Helvetica-Bold", 10)
+                    self.c.drawString(55, 650, str(items[0]))
+                    self.c.drawString(75, 650, str(items[1]))
+                    self.c.drawString(115, 650, str(items[2]))
+                    self.c.drawString(230, 650, str(items[3]))
+                    self.c.drawString(360, 650, str(items[4]))
+                    self.c.drawString(390, 650, str(items[5]))
+                    self.c.drawString(480, 650, str(items[6]))
+                    self.c.line(40, 645, 550, 645)
                     x = 55
                     y = 630
 
-                globals.report.setFont("Helvetica", 8)
-                dni = '***' + str(record[0][4:7] + '***')
-                globals.report.drawCentredString(x + 10, y, dni)
-                globals.report.drawString(x + 50, y, str(record[2]))
-                globals.report.drawString(x + 130, y, str(record[3]))
-                globals.report.drawCentredString(x + 210, y, str(record[5]))
-                globals.report.drawString(x + 270, y, str(record[8]))
-                globals.report.drawString(x + 350, y, str(record[9]))
-                if str(record[10]) == 'True':
-                    globals.report.drawString(x + 430, y, "Activo")
+                self.c.setFont("Helvetica", 8)
+                dni = "***" + str(record[0][4:7] + "***")
+                self.c.drawCentredString(x + 19, y, dni)
+                self.c.drawString(x + 65, y, record[2])
+                self.c.drawString(x + 160, y, record[3])
+                self.c.drawString(x + 215, y, str(record[5]))
+                self.c.drawString(x + 275, y, record[8])
+                self.c.drawString(x + 340, y, record[9])
+                if str(record[10]) == "True":
+                    self.c.drawString(x + 430, y, "Active")
                 else:
-                    globals.report.drawString(x + 430, y, "Baja")
+                    self.c.drawString(x + 430, y, "Inactive")
                 y = y - 25
+            self.c.save()
 
-            globals.report.save()
-            try:
-                os.startfile(pdf_path)
-            except Exception as e:
-                print("No se pudo abrir el PDF:", e)
+            for file in os.listdir(self.rootPath):
+                if file.endswith(self.namereportcli):
+                    os.startfile(self.pdf_path)
 
         except Exception as error:
-            print("error en reportCustomers", error)
+            print("There was an error with customersReports: ", error)
 
-    def reportProducts(self):
-        try:
-            rootPath = ".\\reports"
-            if not os.path.exists(rootPath):
-                os.makedirs(rootPath)
-            data = datetime.today().strftime("%Y_%m_%d_%H_%M_%S")
-            namereportpro = data + "_reportproducts.pdf"
-            pdf_path = os.path.join(rootPath, namereportpro)
-            globals.report = canvas.Canvas(pdf_path)
-            titulo = "Product List"
-            Reports.footer(titulo)
-            Reports.topReport(titulo)
-            records = Conexion.listProducts()
-            if not records:
-                print("No Products")
-                return
-            items = ["ID", "NAME", "FAMILY", "STOCK", "PRICE"]
-            globals.report.setFont("Helvetica-Bold", 10)
-            globals.report.drawString(60, 650, str(items[0]))
-            globals.report.drawString(165, 650, str(items[1]))
-            globals.report.drawString(310, 650, str(items[2]))
-            globals.report.drawString(390, 650, str(items[3]))
-            globals.report.drawString(480, 650, str(items[4]))
-            globals.report.line(35, 645, 525, 645)
-            x = 55
-            y = 630
-            for record in records:
-                if y <= 90:
-                    globals.report.setFont("Helvetica-Oblique", 8)
-                    globals.report.drawString(450, 75, "Página siguiente...")
-                    globals.report.showPage()
-                    Reports.footer(titulo)
-                    Reports.topReport(titulo)
-                    items = ["ID", "NAME", "FAMILY", "STOCK", "PRICE"]
-                    globals.report.setFont("Helvetica-Bold", 10)
-                    globals.report.drawString(60, 650, str(items[0]))
-                    globals.report.drawString(165, 650, str(items[1]))
-                    globals.report.drawString(310, 650, str(items[2]))
-                    globals.report.drawString(390, 650, str(items[3]))
-                    globals.report.drawString(480, 650, str(items[4]))
-                    globals.report.line(35, 645, 525, 645)
-                    x = 55
-                    y = 630
-                globals.report.setFont("Helvetica-Bold", 8)
-                globals.report.drawCentredString(x + 10, y, str(record[0]))
-                globals.report.drawString(x + 110, y, str(record[1]))
-                globals.report.drawString(x + 255, y, str(record[2]))
-                globals.report.drawString(x + 350, y, str(record[3]))
-                globals.report.drawRightString(x + 450, y, str(record[4]))
-                y = y - 25
-            globals.report.save()
-            try:
-                os.startfile(pdf_path)
-            except Exception as e:
-                print("No se pudo abrir el PDF:", e)
-
-        except Exception as error:
-            print("error en report productos", error)
 
     @staticmethod
-    def ticket(self=None):
+    def runSaleReport():
+        report = Reports()
+        report.reportInovice()
+
+
+    def reportInvoice(self, idFac):
+
+        subtotal = 0
+
+        rootPath = '.\\invoices'
+        data = datetime.now().strftime("%m_%d_%Y_%I_%M_%S")
+        self.namereportinv = data + '_invoice.pdf'
+        self.pdf_path = os.path.join(rootPath, self.namereportinv)
+        self.c = canvas.Canvas(self.pdf_path)
+        self.rootPath = rootPath
         try:
-            rootPath = ".\\reports"
-            if not os.path.exists(rootPath):
-                os.makedirs(rootPath)
+            titulo = "Factura nº" + str(idFac)
+            self.footer(titulo)
+            self.toReport(titulo)
+            self.c.setFont("Helvetica-Bold", 13)
+            self.c.drawString(515, 625, "Nº:" + str(idFac))
 
-            data = datetime.today().strftime("%Y_%m_%d_%H_%M_%S")
-            ticket_name = data + "_ticket.pdf"
-            pdf_path = os.path.abspath(os.path.join(rootPath, ticket_name))
+            records = Conexion.getSales(idFac)
+            sale = Conexion.getOneInvoice(idFac)
 
-            globals.report = canvas.Canvas(pdf_path)
+            customer = Conexion.dataOneCustomer(sale[0][1])
 
-            dni = globals.ui.txtDniFac.text().strip()
-            titulo = "FACTURA SIMPLIFICADA" if dni == "00000000T" else "FACTURA"
 
-            records = Conexion.dataOneCustomer(dni)
-            if not records:
-                return
-
-            y = 785
-            globals.report.setFont("Helvetica-Bold", 10)
-            globals.report.drawString(220, y, "DNI: " + str(records[0]))
-            globals.report.drawString(220, y - 15, "APELLIDOS: " + str(records[2]))
-            globals.report.drawString(220, y - 30, "NOMBRE: " + str(records[3]))
-            globals.report.drawString(220, y - 45, "DIRECCIÓN:  " + str(records[6]))
-            globals.report.drawString(220, y - 60, "LOCALIDAD: " + str(records[8]) + "  PROVINCIA: " + str(records[7]))
-
-            numfact = globals.ui.lblnumfac.text()
-            globals.report.setFont("Helvetica-Bold", 10)
-            if titulo == "FACTURA":
-                globals.report.drawString(320, 675, "Nº " + str(numfact))
+            if (customer[0] == "00000000T"):
+                self.c.drawString(190, 625, "FACTURA SIMPLIFICADA")
             else:
-                globals.report.drawString(360, 675, "Nº " + str(numfact))
+                self.c.setFont("Helvetica-Bold", 10)
+                self.c.drawRightString(545, 705, "Cliente:")
+                self.c.setFont("Helvetica", 10)
+                self.c.drawRightString(545, 685, "Nombre: " + customer[2] + ", " + customer[3])
+                self.c.drawRightString(545, 670, "Email: " + customer[4])
+                self.c.drawRightString(545, 655, "Telefono: " + customer[5])
 
-            dataFact = Conexion.datosFac(numfact)
-            if not dataFact:
-                print("Error: No invoice data for number:", numfact)
-                return
 
-            items = ["Code", "Product", "Unit Price", "Amount", "Total"]
-            globals.report.drawString(60, 650, str(items[0]))
-            globals.report.drawString(150, 650, str(items[1]))
-            globals.report.drawString(310, 650, str(items[2]))
-            globals.report.drawString(400, 650, str(items[3]))
-            globals.report.drawString(480, 650, str(items[4]))
-            globals.report.line(35, 640, 525, 640)
 
-            x = 60
-            y = 625
-            for data in dataFact:
-                if len(data) < 7:
-                    print("Error: Incomplete sales line data:", data)
-                    continue
+            items = ["Sale ID", "Product ID", "Product", "Price p/u", "Amount", "Total"]
+            self.c.line(40, 615, 550, 615)
+            self.c.setFont("Helvetica-Bold", 10)
+            self.c.drawString(55, 601, items[0])
+            self.c.drawString(115, 601, items[1])
+            self.c.drawString(185, 601, items[2])
+            self.c.drawString(315, 601, items[3])
+            self.c.drawString(385, 601, items[4])
+            self.c.drawRightString(550, 601, items[5])
+            self.c.line(40, 595, 550, 595)
 
-                globals.report.setFont("Helvetica", 8)
-                globals.report.drawString(x, y, str(data[2]))
-                globals.report.drawString(x + 90, y, str(data[3]))
-                globals.report.drawString(x + 250, y, str(data[4]))
-                globals.report.drawString(x + 360, y, str(data[5]))
-                globals.report.drawString(x + 420, y, str(data[6]))
-                globals.report.drawString(x + 450, y, "€")
-                y = y - 25
 
-            globals.report.setFont("Helvetica-Bold", 10)
-            globals.report.drawString(350, y - 20, "Subtotal:")
-            globals.report.drawRightString(500, y - 20, f"{globals.subtotal:.2f} €")
-            globals.report.drawString(350, y - 40, "IVA (21%):")
-            iva = round(globals.subtotal * 0.21, 2)
-            globals.report.drawRightString(500, y - 40, f"{iva:.2f} €")
-            globals.report.drawString(350, y - 60, "Total:")
-            total = round(globals.subtotal + iva, 2)
-            globals.report.drawRightString(500, y - 60, f"{total:.2f} €")
 
-            Reports.topReport(titulo)
-            Reports.footer(titulo)
-            globals.report.save()
 
-            try:
-                os.startfile(pdf_path)
-            except Exception as e:
-                print("Error: Could not open PDF:", e)
+
+
+            y = 580
+
+            for record in records:
+                if y <= 90:
+                    self.c.setFont("Helvetica-Oblique", 8)
+                    self.c.drawString(450, 75, "Página siguiente...")
+                    self.c.showPage()
+
+                    # Repetir cabecera en nueva página
+                    self.c.setFont("Helvetica-Bold", 10)
+                    self.c.line(40, 615, 550, 615)
+                    self.c.drawString(55, 601, items[0])
+                    self.c.drawString(115, 601, items[1])
+                    self.c.drawString(185, 601, items[2])
+                    self.c.drawString(315, 601, items[3])
+                    self.c.drawString(385, 601, items[4])
+                    self.c.drawString(550, 601, items[5])
+                    self.c.line(40, 595, 550, 595)
+                    y = 580
+
+                self.c.setFont("Helvetica", 9)
+
+                self.c.drawString(55, y, str(record[0]))  # Sale ID
+                self.c.drawString(115, y, str(record[2]))  # Product ID
+                self.c.drawString(185, y, record[3])  # Product
+                self.c.drawRightString(330, y, record[4])  # Price p/u
+                self.c.drawRightString(395, y, str(record[5]))  # Amount
+                self.c.drawRightString(550, y, record[6]) # Total
+                subtotal = subtotal + float(record[6])
+
+
+                y -= 25
+
+            self.c.setFont("Helvetica-Bold", 10)
+            self.c.line(450, y+15, 550, y+15)
+            self.c.drawRightString(490, y, "Subtotal:")  # Total
+            self.c.drawRightString(490, y-15, "IVA:")  # Total
+            self.c.drawRightString(490, y-50, "Total:")  # Total
+            self.c.drawRightString(550, y, str(subtotal) + " €")  # Total
+            self.c.drawRightString(550, y - 15, str(round(subtotal * 0.21, 2)) + " €")  # Total
+            self.c.drawRightString(550, y - 50, str(round(subtotal + subtotal * 0.21, 2)) + " €")  # Total
+
+
+            self.c.save()
+
+            for file in os.listdir(self.rootPath):
+                if file.endswith(self.namereportinv):
+                    os.startfile(self.pdf_path)
 
         except Exception as error:
-            print("Error generating PDF:", error)
+            print("There was an error with invoiceReports: ", error)

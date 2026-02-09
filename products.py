@@ -1,174 +1,154 @@
 
-from conexion import *
-from PyQt6 import QtWidgets, QtCore, QtGui
+from PyQt6 import QtWidgets, QtCore
+from conexion import Conexion
+from PyQt6.QtGui import QColor
+import globals
 
 
 class Products:
-    @staticmethod
-    def loadTableProducts(self=None):
+    def loadTableProd(self):
         try:
-            listTabProducts = Conexion.listProducts()
+            listProd = Conexion.listProds(self)
             index = 0
-            for record in listTabProducts:
-                globals.ui.tblProducts.setRowCount(index + 1)
-                globals.ui.tblProducts.setItem(index, 0, QtWidgets.QTableWidgetItem(str(record[0])))
-                globals.ui.tblProducts.setItem(index, 1, QtWidgets.QTableWidgetItem(str(record[1])))
-                globals.ui.tblProducts.setItem(index, 2, QtWidgets.QTableWidgetItem(str("  " + str(record[2]) + "  ")))
-                globals.ui.tblProducts.setItem(index, 3, QtWidgets.QTableWidgetItem(str(record[3])))
-                globals.ui.tblProducts.setItem(index, 4, QtWidgets.QTableWidgetItem(str(record[4]) + " €"))
+            for record in listProd:
+                globals.ui.tblProdlist.setRowCount(index + 1)
+                globals.ui.tblProdlist.setItem(index, 0, QtWidgets.QTableWidgetItem(str(record[0])))
+                globals.ui.tblProdlist.setItem(index, 1, QtWidgets.QTableWidgetItem(str(record[1])))
+                globals.ui.tblProdlist.setItem(index, 2, QtWidgets.QTableWidgetItem(str(record[2])))
+                globals.ui.tblProdlist.setItem(index, 3, QtWidgets.QTableWidgetItem(str(record[3])))
+                globals.ui.tblProdlist.setItem(index, 4, QtWidgets.QTableWidgetItem(str(record[4])))
 
-                stock = float(record[2])
-                if stock < 5:
-                    pale_red = QtGui.QColor(255, 200, 200)
-
-                    for i in range(5):
-                        item = globals.ui.tblProducts.item(index, i)
-                        if item:
-                            item.setBackground(pale_red)
-
-                globals.ui.tblProducts.item(index, 0).setTextAlignment(QtCore.Qt.AlignmentFlag.AlignCenter.AlignCenter)
-                globals.ui.tblProducts.item(index, 1).setTextAlignment(QtCore.Qt.AlignmentFlag.AlignLeft.AlignVCenter)
-                globals.ui.tblProducts.item(index, 2).setTextAlignment(QtCore.Qt.AlignmentFlag.AlignCenter.AlignCenter)
-                globals.ui.tblProducts.item(index, 3).setTextAlignment(QtCore.Qt.AlignmentFlag.AlignRight.AlignRight)
-                globals.ui.tblProducts.item(index, 4).setTextAlignment(QtCore.Qt.AlignmentFlag.AlignRight.AlignRight)
+                if record[2] < 10:
+                    item = QtWidgets.QTableWidgetItem(str(record[2]))
+                    globals.ui.tblProdlist.setItem(index, 2, item)
+                    font = item.font()
+                    font.setBold(True)
+                    item.setForeground(QtCore.Qt.GlobalColor.red)
 
                 index += 1
 
-        except Exception as error:
-            print("error en loadTableProducts ", error)
+        except Exception as e:
+            print("Error en loadTableProd: ", e)
 
-    def comaPunto(valor):
-        valor = valor.replace(',', '.')
-        globals.ui.txtPrice.setText(str(valor))
 
-    def savePro(self=None):
+    def saveProd(self):
         try:
-            newpro = [globals.ui.txtName.text(), globals.ui.txtStock.text(), globals.ui.comboBox.currentText(), globals.ui.txtPrice.text()]
-
-            if Conexion.addPro(newpro) and len(newpro) > 0:
+            newProd = [globals.ui.txtNameProd.text(), globals.ui.txtStock.text(), globals.ui.cmbFamily.currentText(), globals.ui.txtPrice.text()]
+            if Conexion.addProd(newProd) and len(newProd) > 0:
                 mbox = QtWidgets.QMessageBox()
                 mbox.setWindowTitle("Information")
                 mbox.setIcon(QtWidgets.QMessageBox.Icon.Information)
-                mbox.setText("Product added")
+                mbox.setText("The product has been added")
                 mbox.setStandardButtons(QtWidgets.QMessageBox.StandardButton.Ok)
-
-                if mbox.exec():
-                    mbox.hide()
+                Products.loadTableProd(self)
+                Products.resetProduct(self)
             else:
                 mbox = QtWidgets.QMessageBox()
                 mbox.setWindowTitle("Warning")
                 mbox.setIcon(QtWidgets.QMessageBox.Icon.Warning)
-                mbox.setText("Warning, no Product added")
+                mbox.setText("Contact with the administrator")
                 mbox.setStandardButtons(QtWidgets.QMessageBox.StandardButton.Ok)
 
-                if mbox.exec():
-                    mbox.hide()
-
-            Products.loadTableProducts(self=None)
         except Exception as error:
-            print("Error  saving product ", error)
+            print("error del save prod ", error)
+
+    def resetProduct(self):
+        try:
+            globals.ui.lblCodeId.setText("")
+            globals.ui.txtNameProd.setText("")
+            globals.ui.txtStock.setText("")
+            globals.ui.txtPrice.setText("")
+
+        except Exception as error:
+            print("error emptyCustomers ", error)
+
+    def selectProd(self):
+        try:
+           row = globals.ui.tblProdlist.selectedItems()
+           id = row[0].text()
+           record = Conexion.dataOneProduct(id)
+           boxes = [globals.ui.lblCodeId, globals.ui.txtNameProd, globals.ui.txtStock, globals.ui.txtPrice, globals.ui.txtPrice]
+           for i in range(len(boxes)):
+               boxes[i].setText(str(record[i]))
+
+           globals.ui.cmbFamily.setCurrentText(str(record[3]))
+        except Exception as e:
+            print("error en selectProd ", e)
 
     @staticmethod
-    def cleanPro():
-        try:
-            boxes = [globals.ui.txtCode, globals.ui.txtName,
-                     globals.ui.txtStock, globals.ui.txtPrice
-                     ]
-            for i in range(len(boxes)):
-                boxes[i].setText("")
-            globals.ui.comboBox.setCurrentText("")
-        except Exception as error:
-            print("error clean pro ", error)
-
-    def selectPro(self):
-        try:
-            row = globals.ui.tblProducts.selectedItems()
-            data = [dato.text() for dato in row]
-            data[4] = data[4].replace("€", "").strip()
-            boxes = [globals.ui.txtCode, globals.ui.txtName, globals.ui.txtStock, globals.ui.comboBox,
-                     globals.ui.txtPrice]
-            for i in range(len(boxes)):
-                if i == 3:
-                    boxes[i].setCurrentText(str(data[3]).strip())
-                else:
-                    boxes[i].setText(str(data[i]))
-
-            globals.ui.txtName.setStyleSheet("background-color: rgb(255, 255, 202);")
-            globals.ui.tblProducts.setStyleSheet("""
-            QTableWidget::item:selected {
-                background-color: rgb(255, 255, 202);
-                color: black;
-            }
-            QTableWidget::item:hover {
-                background-color: rgb(220, 240, 255);
-                color: black;
-            }
-            """)
-        except Exception as error:
-            print("error en selecting product ", error)
-
-    def delPro(self=None):
+    def delProd(self):
         try:
             mbox = QtWidgets.QMessageBox()
-            mbox.setWindowTitle("WARNING")
+            mbox.setWindowTitle("Warning")
             mbox.setIcon(QtWidgets.QMessageBox.Icon.Warning)
             mbox.setText("Delete Product?")
-            mbox.setStandardButtons(QtWidgets.QMessageBox.StandardButton.Yes | QtWidgets.QMessageBox.StandardButton.Cancel)
-            mbox.setDefaultButton(QtWidgets.QMessageBox.StandardButton.Cancel)
-            if mbox.exec() == QtWidgets.QMessageBox.StandardButton.Yes:
-
-                name = globals.ui.txtName.text()
-                if Conexion.deletePro(name):
-
+            mbox.setStandardButtons(QtWidgets.QMessageBox.StandardButton.Yes | QtWidgets.QMessageBox.StandardButton.No)
+            if mbox.exec():
+                id = globals.ui.lblCodeId.text()
+                if Conexion.deleteProd(id):
                     mbox = QtWidgets.QMessageBox()
                     mbox.setWindowTitle("Information")
                     mbox.setIcon(QtWidgets.QMessageBox.Icon.Information)
-                    mbox.setText("Delete Product?")
-                    mbox.setStandardButtons(QtWidgets.QMessageBox.StandardButton.Yes | QtWidgets.QMessageBox.StandardButton.No)
-                    mbox.setDefaultButton(QtWidgets.QMessageBox.StandardButton.No)
-
+                    mbox.setText("The product has been deleted")
+                    mbox.setStandardButtons(QtWidgets.QMessageBox.StandardButton.Ok)
+                    mbox.exec()
+                    Products.loadTableProd(self)
+                    Products.resetProduct(self)
                 else:
-                    print("Something went wrong")
-                Products.loadTableProducts(self=None)
-
-            else:
-                pass
-
+                    mbox = QtWidgets.QMessageBox()
+                    mbox.setWindowTitle("Warning")
+                    mbox.setIcon(QtWidgets.QMessageBox.Icon.Warning)
+                    mbox.setText("Contact with the administrator")
+                    mbox.setStandardButtons(QtWidgets.QMessageBox.StandardButton.Ok)
+                    mbox.exec()
         except Exception as error:
-            print("error en deleting product ", error)
+            print("error al eliminar el cliente", error)
 
-    @staticmethod
-    def modifyPro():
+
+
+    def modifProd(self):
         try:
-            if globals.ui.txtCode.text() != "":
+            if globals.ui.lblCodeId.text() != "":
                 mbox = QtWidgets.QMessageBox()
-                mbox.setWindowTitle("Modify Data")
+                mbox.setWindowTitle("Question")
                 mbox.setIcon(QtWidgets.QMessageBox.Icon.Question)
-                mbox.setText("Are you sure modify all data?")
+                mbox.setText("Are you sure you want to modify this product?")
                 mbox.setStandardButtons(
                     QtWidgets.QMessageBox.StandardButton.Yes | QtWidgets.QMessageBox.StandardButton.No)
-                if mbox.exec() == QtWidgets.QMessageBox.StandardButton.Yes:
-                    id = globals.ui.txtCode.text()
-                    modpro = [globals.ui.txtName.text(), globals.ui.comboBox.currentText(),
-                              globals.ui.txtStock.text(), globals.ui.txtPrice.text()
-                              ]
-
-                    if Conexion.modifyPro(id, modpro):
+                if mbox.exec():
+                    id = globals.ui.lblCodeId.text()
+                    modifProd = [globals.ui.txtNameProd.text(), globals.ui.txtStock.text(), globals.ui.cmbFamily.currentText(), globals.ui.txtPrice.text()]
+                    if Conexion.modifProd(id, modifProd):
                         mbox = QtWidgets.QMessageBox()
                         mbox.setWindowTitle("Information")
                         mbox.setIcon(QtWidgets.QMessageBox.Icon.Information)
-                        mbox.setText("Product modified")
+                        mbox.setText("The product has been modified")
                         mbox.setStandardButtons(QtWidgets.QMessageBox.StandardButton.Ok)
                         if mbox.exec():
-                            mbox.hide()
-            else:
-                mbox = QtWidgets.QMessageBox()
-                mbox.setWindowTitle("Error")
-                mbox.setIcon(QtWidgets.QMessageBox.Icon.Critical)
-                mbox.setText("Error modifying data. Empty Data? ")
-                mbox.setStandardButtons(QtWidgets.QMessageBox.StandardButton.Ok)
-                if mbox.exec() == QtWidgets.QMessageBox.StandardButton.Ok:
-                    mbox.hide()
-            Products.loadTableProducts(self=None)
+                            mbox.hide
+                    else:
+                        mbox = QtWidgets.QMessageBox()
+                        mbox.setWindowTitle("Warning")
+                        mbox.setIcon(QtWidgets.QMessageBox.Icon.Warning)
+                        mbox.setText("Error modifying the product.")
+                        mbox.setStandardButtons(QtWidgets.QMessageBox.StandardButton.Ok)
+                        if mbox.exec():
+                            mbox.hide
+
+            Products.loadTableProd(self)
+            Products.resetProduct(self)
         except Exception as error:
-            print("error modify pro ", error)
+            print("error en modifCli ", error)
+
+    @staticmethod
+    def capitalizar(widget):
+        try:
+            text= widget.text()
+            widget.setText(text.capitalize())
+        except Exception as error:
+            print("error en capitalizar texto ", error)
+
+    @staticmethod
+    def comaPunto(valor):
+        valor = str(valor.replace(",", "."))
+        globals.ui.txtPrice.setText(valor)

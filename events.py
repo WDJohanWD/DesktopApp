@@ -3,57 +3,56 @@ import os
 import shutil
 import sys
 import time
-import customers
-import events
-from window import *
 import zipfile
-from venAux import *
+from datetime import datetime
+
 import conexion
+import customers
 import globals
-from PyQt6 import QtWidgets, QtCore, QtGui
+
+from PyQt6 import QtCore, QtGui, QtWidgets, QtSql
+
 
 class Events:
     @staticmethod
-    def messageExit(self=None):
-        try:
-            mbox = QtWidgets.QMessageBox()
-            mbox.setIcon(QtWidgets.QMessageBox.Icon.Question)
-            mbox.setWindowIcon(QtGui.QIcon("img/logo.png"))
-            mbox.setWindowTitle("Exit")
-            mbox.setText("Are you sure you want to exit?")
-            mbox.setStandardButtons(QtWidgets.QMessageBox.StandardButton.Yes | QtWidgets.QMessageBox.StandardButton.No)
-            mbox.setDefaultButton(QtWidgets.QMessageBox.StandardButton.No)
-            mbox.resize(600, 800)
-            if mbox.exec() == QtWidgets.QMessageBox.StandardButton.Yes:
-                sys.exit()
-            else:
-                mbox.hide()
-        except Exception as e:
-            print("error", e)
+    def messageExit():
+        mbox = QtWidgets.QMessageBox()
+        mbox.setIcon(QtWidgets.QMessageBox.Icon.Question)
+        mbox.setWindowIcon(QtGui.QIcon('./img/logo.png'))
+        mbox.setWindowTitle('Exit')
+        mbox.setText('Are you sure you want to exit?')
+        mbox.setStandardButtons(QtWidgets.QMessageBox.StandardButton.Yes | QtWidgets.QMessageBox.StandardButton.No)
+        mbox.setDefaultButton(QtWidgets.QMessageBox.StandardButton.No)
+        mbox.resize(600, 800)
+        if mbox.exec() == QtWidgets.QMessageBox.StandardButton.Yes:
+            sys.exit()
+        else:
+            mbox.hide()
 
-    def openCalendar(self=None):
+    def openCalendar(self):
         try:
             globals.vencal.show()
+
         except Exception as e:
-            print("error calendar", e)
+            print("Error en calendario", e)
 
     def loadData(qDate):
         try:
             data = ('{:02d}/{:02d}/{:4d}'.format(qDate.day(), qDate.month(), qDate.year()))
-            if globals.ui.PanMain.currentIndex() == 0:
-                globals.ui.txtAltacli.setText(data)
+            globals.ui.txtAltacli.setText(data)
             time.sleep(0.3)
             globals.vencal.hide()
+
         except Exception as e:
-            print("error loading Data", e)
+            print("error en cargar Data", e)
 
     def loadProv(self):
         try:
             globals.ui.cmbProvcli.clear()
-            list = conexion.Conexion.listProv(self)
+            list = conexion.Conexion().listProv()
             globals.ui.cmbProvcli.addItems(list)
         except Exception as e:
-            print("error loading Prov", e)
+            print("Error en cargar Provincias", e)
 
     def loadMunicli(self):
         try:
@@ -61,151 +60,188 @@ class Events:
             list = conexion.Conexion.listMuniProv(province)
             globals.ui.cmbMunicli.clear()
             globals.ui.cmbMunicli.addItems(list)
-        except Exception as e:
-            print("error loading MuniProv", e)
 
-    def resizeTabCustomer(self):
-        try:
-            header = globals.ui.tableCustomerlist.horizontalHeader()
-            for i in range(header.count()):
-                if i == 3:
-                    header.setSectionResizeMode(i, QtWidgets.QHeaderView.ResizeMode.ResizeToContents)
-                else:
-                    header.setSectionResizeMode(i, QtWidgets.QHeaderView.ResizeMode.Stretch)
-                header_items = globals.ui.tableCustomerlist.horizontalHeaderItem(i)
-                font = header_items.font()
-                font.setBold(True)
-                header_items.setFont(font)
         except Exception as e:
-            print("error resizing table clients: ", e)
-
-    def resizeTabProducts(self):
-        try:
-            header = globals.ui.tblProducts.horizontalHeader()
-            for i in range(header.count()):
-                if i == 3:
-                    header.setSectionResizeMode(i, QtWidgets.QHeaderView.ResizeMode.ResizeToContents)
-                else:
-                    header.setSectionResizeMode(i, QtWidgets.QHeaderView.ResizeMode.Stretch)
-                header_items = globals.ui.tblProducts.horizontalHeaderItem(i)
-                font = header_items.font()
-                font.setBold(True)
-                header_items.setFont(font)
-        except Exception as e:
-            print("error resizing table products: ", e)
-
-    def resizeTabSales(self):
-        try:
-            header = globals.ui.tabsales.horizontalHeader()
-            for i in range(header.count()):
-                if i == 0:
-                    header.setSectionResizeMode(i, QtWidgets.QHeaderView.ResizeMode.ResizeToContents)
-                else:
-                    header.setSectionResizeMode(i, QtWidgets.QHeaderView.ResizeMode.Stretch)
-                header_items = globals.ui.tabsales.horizontalHeaderItem(i)
-                font = header_items.font()
-                font.setBold(True)
-                header_items.setFont(font)
-        except Exception as e:
-            print("error resizing table sales: ", e)
+            print("Error en cargar Municipios", e)
 
     def messageAbout(self):
         try:
             globals.about.show()
         except Exception as e:
-            print("error in open about", e)
+            print("Error en about", e)
 
-    def closeabout(self):
+    def closeAbout(self):
         try:
             globals.about.hide()
         except Exception as e:
-            print("error in close about", e)
+            print("Error en about", e)
+
+    def resizeTabCustomer(self):
+        try:
+            header = globals.ui.tblCustomerlist.horizontalHeader()
+            for i in range(header.count()):
+                if i == 6:
+                    header.setSectionResizeMode(i, QtWidgets.QHeaderView.ResizeMode.ResizeToContents)
+                else:
+                    header.setSectionResizeMode(i, QtWidgets.QHeaderView.ResizeMode.Stretch)
+                header_items = globals.ui.tblCustomerlist.horizontalHeaderItem(i)
+                # negrita cabecera
+                font = header_items.font()
+                font.setBold(True)
+                header_items.setFont(font)
+        except Exception as e:
+            print("error en resize tabla clients: ", e)
+
+    def resizeTabProds(self):
+        """
+            Modulo para ajustar el tamaño de las columnas de la tabla de productos
+            :return:
+        """
+        try:
+            header = globals.ui.tblProdlist.horizontalHeader()
+            for i in range(header.count()):
+                if i == 6:
+                    header.setSectionResizeMode(i, QtWidgets.QHeaderView.ResizeMode.ResizeToContents)
+                else:
+                    header.setSectionResizeMode(i, QtWidgets.QHeaderView.ResizeMode.Stretch)
+                header_items = globals.ui.tblProdlist.horizontalHeaderItem(i)
+                # negrita cabecera
+                font = header_items.font()
+                font.setBold(True)
+                header_items.setFont(font)
+        except Exception as e:
+            print("error en resize tabla clients: ", e)
+
+    def resizeTabFac(self):
+        try:
+            header = globals.ui.tblFaclist.horizontalHeader()
+            for i in range(header.count()):
+                header_items = globals.ui.tblFaclist.horizontalHeaderItem(i)
+                # negrita cabecera
+                font = header_items.font()
+                font.setBold(True)
+                header_items.setFont(font)
+
+                globals.ui.tblFaclist.setColumnWidth(0, 60)
+                globals.ui.tblFaclist.setColumnWidth(1, 70)
+                globals.ui.tblFaclist.setColumnWidth(2, 80)
+                globals.ui.tblFaclist.setColumnWidth(3, 32)
+        except Exception as e:
+            print("error en resize tabla clients: ", e)
+
+    def resizeTabSales(self):
+        try:
+            header = globals.ui.tblSales.horizontalHeader()
+            for i in range(header.count()):
+                if i == 6:
+                    header.setSectionResizeMode(i, QtWidgets.QHeaderView.ResizeMode.ResizeToContents)
+                else:
+                    header.setSectionResizeMode(i, QtWidgets.QHeaderView.ResizeMode.Stretch)
+                header_items = globals.ui.tblSales.horizontalHeaderItem(i)
+                # negrita cabecera
+                font = header_items.font()
+                font.setBold(True)
+                header_items.setFont(font)
+        except Exception as e:
+            print("error en resize tabla clients: ", e)
 
     def saveBackup(self):
         try:
             data = datetime.now().strftime("%Y_%m_%d_%H_%M_%S")
-            filename = str(data) + "_backup.zip"
-            directory, file = globals.dlgopen.getSaveFileName(None, "Save Backup file", filename, "zip")
-
+            fileName = str(data) + '_backup.zip'
+            directory, file = globals.dlgopen.getSaveFileName(None, 'Save Backup file', fileName, 'zip')
             if globals.dlgopen.accept and file:
-                filezip = zipfile.ZipFile(file, "w")
-                filezip.write("./data/bbdd.sqlite", os.path.basename("bbdd.sqlite"), zipfile.ZIP_DEFLATED)
-                filezip.close()
+                fileZip = zipfile.ZipFile(file, "w")
+                fileZip.write('./data/bbdd.sqlite', os.path.basename('bbdd.sqlite'), zipfile.ZIP_DEFLATED)
+                fileZip.close()
                 shutil.move(file, directory)
                 mbox = QtWidgets.QMessageBox()
                 mbox.setIcon(QtWidgets.QMessageBox.Icon.Information)
-                mbox.setWindowIcon(QtGui.QIcon("img/logo.png"))
-                mbox.setWindowTitle("Save Backup")
-                mbox.setText("Save Backup Done")
+                mbox.setWindowIcon(QtGui.QIcon('./img/logo.png'))
+                mbox.setWindowTitle('Save Backup')
+                mbox.setText('Save Backup Done')
                 mbox.setStandardButtons(QtWidgets.QMessageBox.StandardButton.Ok)
                 mbox.exec()
 
         except Exception as e:
-            print("error in save backup", e)
+            print("Error en save backup", e)
 
     def restoreBackup(self):
         try:
-            filename = globals.dlgopen.getOpenFileName(None, "Restore Backup file", "", "*.zip;;All Files(*)")
-            file = filename[0]
+            fileName = globals.dlgopen.getOpenFileName(None, 'Restore Backup file', '', '*.zip;;All Files (*)')
+            file = fileName[0]
             if file:
                 with zipfile.ZipFile(file, "r") as bbdd:
-                    bbdd.extractall(path="./data", pwd=None)
-                bbdd.close()
+                    bbdd.extractall(path='./data', pwd=None)
+                    bbdd.close()
                 mbox = QtWidgets.QMessageBox()
                 mbox.setIcon(QtWidgets.QMessageBox.Icon.Information)
-                mbox.setWindowIcon(QtGui.QIcon("img/logo.png"))
-                mbox.setWindowTitle("Restore Backup")
-                mbox.setText("Restore Backup Done")
+                mbox.setWindowIcon(QtGui.QIcon('./img/logo.png'))
+                mbox.setWindowTitle('Restore Backup')
+                mbox.setText('Restore Backup Done')
                 mbox.setStandardButtons(QtWidgets.QMessageBox.StandardButton.Ok)
                 mbox.exec()
                 conexion.Conexion.db_conexion(self)
-                events.Events.loadProv(self)
+                Events.loadProv(self)
                 customers.Customers.loadTablecli(True)
 
         except Exception as e:
-            print("error in restore backup", e)
+            print("Error en restore backup", e)
 
     def exportXlsCustomers(self):
         try:
             data = datetime.now().strftime("%Y_%m_%d_%H_%M_%S")
-            filenam = str(data) + "_customers.csv"
-            directory, file = globals.dlgopen.getSaveFileName(None, "Save Customers", filenam, ".csv")
-            var = False
+            fileName = str(data) + '_customers.csv'
+            directory, file = globals.dlgopen.getSaveFileName(None, 'Save Customers file', fileName, 'csv')
+            var = True
             if file:
-                records = conexion.Conexion.listTabCustomers(var)
-                with open(filenam, "w", newline="", encoding="utf-8") as csvfile:
+                records = conexion.Conexion.listCustomers(var)
+                with open(file, "w", newline='', encoding='utf-8') as csvfile:
                     writer = csv.writer(csvfile)
-                    writer.writerow(["DNI_NIE", "AddData", "Surname", "Name", "eMail", "Mobile", "Address", "Province", "City", "InvoiceType", "Active"])
+                    writer.writerow(
+                        ["DNI_NIE", "Fecha alta", "surname", "Name", "Mail", "Mobile", "Address", "Province", "City",
+                         "Invoice Type", "Active"])
+
                     for record in records:
                         writer.writerow(record)
-                shutil.move(filenam, directory)
 
+                shutil.move(file, directory)
                 mbox = QtWidgets.QMessageBox()
                 mbox.setIcon(QtWidgets.QMessageBox.Icon.Information)
-                mbox.setWindowIcon(QtGui.QIcon("img/logo.png"))
-                mbox.setWindowTitle("Export Customers")
-                mbox.setText("Export Customers Done")
+                mbox.setWindowIcon(QtGui.QIcon('./img/logo.png'))
+                mbox.setWindowTitle('Export Customers')
+                mbox.setText('The customer data has been exported')
                 mbox.setStandardButtons(QtWidgets.QMessageBox.StandardButton.Ok)
                 mbox.exec()
 
             else:
                 mbox = QtWidgets.QMessageBox()
                 mbox.setIcon(QtWidgets.QMessageBox.Icon.Warning)
-                mbox.setWindowIcon(QtGui.QIcon("img/logo.png"))
-                mbox.setWindowTitle("Export Customers")
-                mbox.setText("Export Customers Error")
+                mbox.setWindowIcon(QtGui.QIcon('./img/logo.png'))
+                mbox.setWindowTitle('Error exporting')
+                mbox.setText('There was an error exporting the customer data')
                 mbox.setStandardButtons(QtWidgets.QMessageBox.StandardButton.Ok)
                 mbox.exec()
-        except Exception as e:
-            print("error in exportXlsCustomers", e)
 
-    def loadStatusbar(self):
-        try:
-            data = datetime.now().strftime("%d/%m/%Y")
-            self.labelStatus = QtWidgets.QLabel(self)
-            self.labelStatus.setText("Date: " + data + " - " + "Version 0.0.1")
-            self.labelStatus.setAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
-            self.labelStatus.setStyleSheet("color: #e0e7ff; font-weight: bold; font-size: 13px;")
-            globals.ui.statusbar.addPermanentWidget(self.labelStatus, 1)
+
+
         except Exception as e:
-            print("error in loadStatusbar", e)
+            print("Error en export customers", e)
+
+    def loadStatusBar(self):
+        try:
+            data = datetime.now().strftime('%d/%m/%y')
+            self.labelstatus = QtWidgets.QLabel(self)
+            self.labelstatus.setAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
+            self.labelstatus.setText(f'Date: {data}')
+            self.labelstatus.setStyleSheet('color: white')
+            globals.ui.statusbar.addWidget(self.labelstatus)
+            self.labelversion = QtWidgets.QLabel(self)
+            self.labelversion.setAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
+            self.labelversion.setText('Version 0.0.1')
+            self.labelversion.setStyleSheet('color: white')
+            globals.ui.statusbar.addWidget(self.labelversion)
+
+        except Exception as e:
+            print("Error en status bar", e)
+
