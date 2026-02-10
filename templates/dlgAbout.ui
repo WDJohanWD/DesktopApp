@@ -162,7 +162,7 @@
     </font>
    </property>
    <property name="text">
-    <string>Author: Esteban Gonzalez Poyet ©</string>
+    <string>Author: Johan Fernando Aponte Valencia ©</string>
    </property>
    <property name="alignment">
     <set>Qt::AlignCenter</set>
