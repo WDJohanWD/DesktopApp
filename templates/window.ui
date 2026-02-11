@@ -10,7 +10,7 @@
     <x>0</x>
     <y>0</y>
     <width>1184</width>
-    <height>973</height>
+    <height>987</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -76,7 +76,7 @@
        </palette>
       </property>
       <property name="currentIndex">
-       <number>0</number>
+       <number>2</number>
       </property>
       <widget class="QWidget" name="tabCli">
        <property name="sizePolicy">
@@ -175,7 +175,7 @@
           <x>9</x>
           <y>265</y>
           <width>1081</width>
-          <height>564</height>
+          <height>566</height>
          </rect>
         </property>
         <layout class="QFormLayout" name="formLayout">
@@ -1711,7 +1711,7 @@
           <x>850</x>
           <y>680</y>
           <width>231</width>
-          <height>91</height>
+          <height>106</height>
          </rect>
         </property>
         <layout class="QGridLayout" name="gridLayout_6">
@@ -1952,6 +1952,12 @@
           <height>91</height>
          </rect>
         </property>
+        <property name="maximumSize">
+         <size>
+          <width>500</width>
+          <height>500</height>
+         </size>
+        </property>
         <property name="layoutDirection">
          <enum>Qt::LeftToRight</enum>
         </property>
@@ -1979,6 +1985,12 @@
           <width>51</width>
           <height>51</height>
          </rect>
+        </property>
+        <property name="maximumSize">
+         <size>
+          <width>400</width>
+          <height>400</height>
+         </size>
         </property>
         <property name="cursor">
          <cursorShape>ArrowCursor</cursorShape>
@@ -2010,7 +2022,7 @@
      <x>0</x>
      <y>0</y>
      <width>1184</width>
-     <height>21</height>
+     <height>26</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuFile">
