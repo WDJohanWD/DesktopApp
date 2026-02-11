@@ -1,7 +1,7 @@
 import re
 
 
-from PyQt6 import QtWidgets, QtCore
+from PyQt6 import QtWidgets, QtCore, QtGui
 
 import globals
 from conexion import Conexion
@@ -94,6 +94,12 @@ class Customers:
                     QtCore.Qt.AlignmentFlag.AlignCenter.AlignCenter)
                 globals.ui.tblCustomerlist.item(index, 6).setTextAlignment(
                     QtCore.Qt.AlignmentFlag.AlignCenter.AlignCenter)
+
+                if str(record[10]) != "True":
+                    for col in range(7):
+                        globals.ui.tblCustomerlist.item(index, col).setBackground(
+                            QtGui.QColor(255, 182, 182))
+
                 index += 1
         except Exception as error:
             print("error en loadTablecli ", error)
